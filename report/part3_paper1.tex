@@ -1,581 +1,141 @@
-\documentclass[12pt, a4paper]{article}
+% --- BẮT ĐẦU NỘI DUNG part3_paper1.tex ---
 
-% ===== PACKAGES =====
-\usepackage[utf8]{inputenc}
-\usepackage[T5]{fontenc}
-\usepackage[vietnamese]{babel}
-\usepackage{amsmath, amssymb, amsthm}
-\usepackage{mathtools}
-\usepackage{geometry}
-\usepackage{hyperref}
-\usepackage{xcolor}
-\usepackage{tcolorbox}
-\usepackage{booktabs}
-\usepackage{array}
-\usepackage{graphicx}
-\usepackage{caption}
-\usepackage{enumitem}
-\usepackage{bm}
-\usepackage{bbm}
-\usepackage{microtype}
-\usepackage{tikz}
-\usepackage{pgfplots}
-\pgfplotsset{compat=1.18}
+\subsection{Phân tích bài báo: Bipartite Ranking through Minimization of Univariate Loss}
 
-\geometry{
-  a4paper,
-  top=2.5cm, bottom=2.5cm,
-  left=3cm, right=2.5cm
-}
+\textbf{Thông tin nghiên cứu:} Bài báo của Kotłowski, Dembczyński, và Hüllermeier công bố tại hội nghị ICML (2011).
 
-% ===== COLORS =====
-\definecolor{theoremblue}{RGB}{30, 90, 160}
-\definecolor{remarkgray}{RGB}{90, 90, 90}
-\definecolor{highlightyellow}{RGB}{255, 248, 200}
-\definecolor{linkblue}{RGB}{0, 70, 140}
-\definecolor{connectiongreen}{RGB}{0, 110, 60}
+\subsubsection{Giới thiệu và bối cảnh bài báo}
 
-\hypersetup{
-  colorlinks=true,
-  linkcolor=linkblue,
-  citecolor=linkblue,
-  urlcolor=linkblue
-}
+Bài báo đặt ra và giải quyết một câu hỏi cốt lõi có ý nghĩa thực tiễn lớn trong bài toán phân hạng:
 
-% ===== THEOREM ENVIRONMENTS =====
-\tcbuselibrary{theorems, skins, breakable}
+\begin{quote}
+\textbf{Câu hỏi nghiên cứu trung tâm:} \textit{Chúng ta mất bao nhiêu hiệu suất xếp hạng (ranking performance) khi huấn luyện một bộ phân loại đơn giản -- tối thiểu hóa hàm mất mát đơn biến (univariate loss) trên dữ liệu gốc -- thay vì huấn luyện trực tiếp một bộ xếp hạng trên các cặp điểm?}
+\end{quote}
 
-\newtcbtheorem[number within=section]{dinh_ly}{Định lý}{
-  colback=blue!5!white, colframe=theoremblue,
-  fonttitle=\bfseries, separator sign={ --},
-  breakable
-}{thm}
-
-\newtcbtheorem[number within=section]{bo_de}{Bổ đề}{
-  colback=green!5!white, colframe=connectiongreen,
-  fonttitle=\bfseries, separator sign={ --},
-  breakable
-}{lem}
-
-\newtcbtheorem[number within=section]{he_qua}{Hệ quả}{
-  colback=purple!5!white, colframe=purple!70!black,
-  fonttitle=\bfseries, separator sign={ --},
-  breakable
-}{cor}
-
-\newtcbtheorem[number within=section]{dinh_nghia}{Định nghĩa}{
-  colback=orange!5!white, colframe=orange!80!black,
-  fonttitle=\bfseries, separator sign={ --},
-  breakable
-}{def}
-
-\newtcolorbox{lienhe_ly_thuyet}{
-  colback=connectiongreen!8!white,
-  colframe=connectiongreen,
-  title={\textbf{Liên hệ với lý thuyết -- Chương 9 [FML]}},
-  fonttitle=\color{white}\bfseries,
-  coltitle=white,
-  colbacktitle=connectiongreen,
-  breakable
-}
-
-\newtcolorbox{nhan_xet_box}{
-  colback=gray!8!white,
-  colframe=gray!60!black,
-  title={\textbf{Nhận xét}},
-  fonttitle=\bfseries,
-  breakable
-}
-
-% ===== MACROS =====
-\newcommand{\R}{\mathbb{R}}
-\newcommand{\E}{\mathbb{E}}
-\newcommand{\Prob}{\mathbb{P}}
-\newcommand{\Lrank}{L_{\mathrm{rank}}}
-\newcommand{\Lzeroone}{L_{0/1}}
-\newcommand{\Lb}{L_b}
-\newcommand{\Lexp}{L_{\exp}}
-\newcommand{\Llog}{L_{\log}}
-\newcommand{\Regrank}{\mathrm{Reg}_{\mathrm{rank}}}
-\newcommand{\Regzeroone}{\mathrm{Reg}_{0/1}}
-\newcommand{\Regexp}{\mathrm{Reg}_{\exp}}
-\newcommand{\Reglog}{\mathrm{Reg}_{\log}}
-\newcommand{\indicator}[1]{\mathbbm{1}_{[#1]}}
-\newcommand{\AUC}{\mathrm{AUC}}
-\newcommand{\sgn}{\mathrm{sgn}}
-\newcommand{\calX}{\mathcal{X}}
-\newcommand{\calH}{\mathcal{H}}
-\newcommand{\eta}{\eta}
-
-% ===== DOCUMENT =====
-\begin{document}
-
-% --------- TIÊU ĐỀ ---------
-\begin{titlepage}
-  \centering 
-  
-  \vspace*{2cm}
-  
-  {\LARGE\bfseries Phần 3 -- Nghiên cứu tiên tiến liên quan}
-
-  \vspace{0.8cm}
-  {\large\bfseries Phân tích bài báo:}\\[0.5em]
-  {\Large\itshape\color{theoremblue}
-    Bipartite Ranking through Minimization\\[0.3em]
-    of Univariate Loss}
-
-  \vspace{0.6cm}
-  {\normalsize Kotłowski, Dembczyński, Hüllermeier\\
-  \textit{Proceedings of the 28th International Conference on\\
-  Machine Learning (ICML)}, 2011}
-
-  \vspace{0.8cm}
-  \rule{0.6\linewidth}{1.5pt} 
-
-\end{titlepage}
-
-% --------- MỤC LỤC ---------
-\tableofcontents
-\newpage
-
-% ============================================================
-\section{Giới thiệu và bối cảnh bài báo}
-% ============================================================
-
-\subsection{Bài toán tổng quan}
-
-Bài báo \cite{kotlowski2011bipartite} được công bố tại hội nghị ICML 2011 -- một trong những hội nghị học máy uy tín nhất thế giới -- đặt ra và giải quyết câu hỏi cốt lõi sau:
-
-\begin{tcolorbox}[colback=highlightyellow, colframe=orange!80!black,
-  title=\textbf{Câu hỏi nghiên cứu trung tâm}, fonttitle=\bfseries]
-  \textit{Chúng ta mất bao nhiêu hiệu suất xếp hạng (ranking performance) khi huấn luyện một bộ phân loại đơn giản -- tối thiểu hóa hàm mất mát đơn biến (univariate loss) trên dữ liệu gốc -- thay vì huấn luyện trực tiếp một bộ xếp hạng trên các cặp điểm?}
-\end{tcolorbox}
-
-\medskip
-
-Đây là câu hỏi có tầm quan trọng thực tiễn lớn vì:
+Đây là câu hỏi có tầm quan trọng vì:
 \begin{enumerate}
-  \item Bài toán \textbf{xếp hạng bipartite} (bipartite ranking) -- xếp hạng các điểm dương cao hơn các điểm âm -- có hàm mục tiêu được định nghĩa trên \emph{tất cả các cặp} (positive, negative). Số cặp này là $O(mn)$, dẫn đến độ phức tạp tính toán bậc hai theo cỡ mẫu.
-
-  \item Ngược lại, các thuật toán phân loại tiêu chuẩn tối thiểu hóa hàm mất mát \emph{đơn biến} (univariate), tức là tính trên từng điểm riêng lẻ, có độ phức tạp $O(n)$ hoặc $O(n \log n)$.
-
+  \item Bài toán \textbf{xếp hạng bipartite} (bipartite ranking) -- xếp hạng các điểm dương cao hơn các điểm âm -- có hàm mục tiêu được định nghĩa trên \emph{tất cả các cặp} (dương, âm). Số cặp này là $O(mn)$, dẫn đến độ phức tạp tính toán bậc hai theo cỡ mẫu.
+  \item Ngược lại, các thuật toán phân loại tiêu chuẩn tối thiểu hóa hàm mất mát \emph{đơn biến} (univariate), tức là tính trên từng điểm riêng lẻ, có độ phức tạp chỉ $O(n)$ hoặc $O(n \log n)$.
   \item Thực nghiệm trước đó cho thấy các bộ phân loại đơn giản -- nhất là những bộ tối thiểu hóa hàm mất mát margin -- thực hiện khá tốt về AUC. Bài báo này cung cấp nền tảng lý thuyết giải thích hiện tượng đó.
 \end{enumerate}
 
-\subsection{Đóng góp chính}
+\subsubsection{Thiết lập và ký hiệu}
 
-Bài báo đóng góp bốn kết quả lý thuyết chính:
+\textbf{Bài toán phân loại nhị phân:} Cho cặp ngẫu nhiên $(x, y) \in \mathcal{X} \times \{-1, +1\}$ được sinh theo phân phối $P(x, y)$. Một bộ phân loại $c: \mathcal{X} \to \mathbb{R}$ có rủi ro phân loại (classification risk):
+\begin{equation}
+  L_\ell(c) := \mathbb{E}\bigl[\ell(y,\, c(x))\bigr]
+\end{equation}
+với $\ell: \{-1,+1\} \times \mathbb{R} \to \mathbb{R}_{\geq 0}$ là hàm mất mát. Hối tiếc (regret) của $c$ được định nghĩa là khoảng cách từ rủi ro của $c$ đến rủi ro của bộ phân loại Bayes tối ưu.
+
+\textbf{Định nghĩa (Xếp hạng bipartite):} Mục tiêu là học một hàm $c: \mathcal{X} \to \mathbb{R}$ sao cho $c(x') > c(x)$ với mọi $x'$ dương và $x$ âm với xác suất cao nhất. 
+
+Rủi ro xếp hạng (rank risk) đo lường xác suất xếp sai thứ tự một cặp:
+\begin{equation}
+  L_{\text{rank}}(r) := \mathbb{P}\bigl(r(x, x') = -1 \mid y > y'\bigr) + \frac{1}{2}\mathbb{P}\bigl(r(x, x') = 0 \mid y > y'\bigr)
+\end{equation}
+với $x$ và $x'$ là các mẫu độc lập. Bộ xếp hạng Bayes có dạng $r^*(x, x') = \text{sgn}\bigl(\eta(x) - \eta(x')\bigr)$, trong đó $\eta(x) = \mathbb{P}(y=1 \mid x)$.
+
+\begin{quote}
+\textbf{Liên hệ với lý thuyết (Chương 9):}
+Định nghĩa về rủi ro xếp hạng và bộ xếp hạng Bayes hoàn toàn nhất quán với định nghĩa trong Mục 9.5, Chương 9. Tuy nhiên, bài báo bổ sung thêm khái niệm \emph{hối tiếc xếp hạng} (rank regret) -- một chỉ số mạnh hơn đo lường khoảng cách đến hiệu suất tối ưu mà giáo trình chưa xoáy sâu.
+\end{quote}
+
+\subsubsection{Trường hợp Hàm mất mát 0/1}
+
+\textbf{Bổ đề:} Cho bộ phân loại $c$. Đặt $\alpha$ là xác suất âm giả, $\beta$ là xác suất dương giả và $p = \mathbb{P}(y=+1)$. Khi đó rủi ro phân hạng bị chặn bởi:
+\begin{equation}
+  L_{\text{rank}}(c) \leq \frac{\alpha}{p} + \frac{\beta}{1-p} - \alpha\beta\, p(1-p)
+\end{equation}
+
+Từ bổ đề trên, bài báo rút ra định lý giới hạn rủi ro cho hàm mất mát 0/1.
+
+\textbf{Định lý 1 (Chặn rủi ro 0/1 loss):} Với phân phối có xác suất lớp dương $p$, mọi bộ phân loại $c$ đều thỏa mãn:
+\begin{equation}
+  L_{\text{rank}}(c) \leq \frac{L_{0/1}(c)}{\min\{p,\, 1-p\}}
+\end{equation}
+
+\begin{quote}
+\textbf{Nhận xét:} Chặn này cho thấy tối ưu rủi ro phân loại sẽ giúp tối ưu rủi ro phân hạng. Tuy nhiên, nếu lớp dữ liệu mất cân bằng nặng (ví dụ $p \to 0$), hằng số $1/\min\{p, 1-p\}$ sẽ rất lớn, khiến chặn này trở nên lỏng lẻo. Để khắc phục, tác giả đề xuất sử dụng hàm mất mát 0/1 được cân bằng trọng số.
+\end{quote}
+
+\subsubsection{Trường hợp Hàm mất mát Margin}
+
+Đây là kết quả cốt lõi của bài báo, chứng minh rằng các hàm mất mát margin (như exponential trong AdaBoost hay logistic trong Logistic Regression) có những tính chất vượt trội cho bài toán phân hạng.
+
+\textbf{Định lý 2 (Chặn hối tiếc - Exponential và Logistic Loss):} 
+Cho $\ell$ là hàm mất mát margin cân bằng trọng số. Hối tiếc xếp hạng $\text{Reg}_{\text{rank}}(c)$ bị chặn bởi:
+\begin{align}
+  \text{Reg}_{\text{rank}}(c) &\leq \frac{3\sqrt{2}}{2}\sqrt{\text{Reg}_{\exp}(c)} \quad \text{(với hàm exponential)} \\
+  \text{Reg}_{\text{rank}}(c) &\leq 2\sqrt{\text{Reg}_{\log}(c)} \quad \text{(với hàm logistic)}
+\end{align}
+
+\begin{quote}
+\textbf{Liên hệ với lý thuyết (Chương 9):}
+Chứng minh của bài báo sử dụng \textbf{kỹ thuật rút gọn} xếp hạng về phân loại bằng cách tạo không gian mới gồm các cặp mẫu $\tilde{x} = (x, x')$. Đây chính là kỹ thuật nền tảng được dùng trong Chương 9 để xây dựng thuật toán RankSVM (Mục 9.3) và RankBoost (Mục 9.4). Đặc biệt, bài báo đã chứng minh được tính \emph{nhất quán} -- tức là hối tiếc của các hàm mục tiêu này tiến về 0 sẽ kéo theo hối tiếc phân hạng tiến về 0.
+\end{quote}
+
+\subsubsection{Thực nghiệm kiểm chứng}
+
+Bài báo so sánh ba thuật toán trên các tập dữ liệu thực (tất cả đều dùng mô hình tuyến tính với L2 regularization):
 \begin{enumerate}
-  \item \textbf{Chặn rủi ro} (risk bound) cho hàm mất mát 0/1: $\Lrank(c) \leq \Lzeroone(c)/\min\{p, 1-p\}$.
-  \item \textbf{Hàm mất mát cân bằng} (balanced loss): cải thiện đáng kể khi phân phối lớp mất cân bằng.
-  \item \textbf{Chặn hối tiếc} (regret bound) cho hàm mất mát margin (exponential, logistic): $\Regrank(c) \leq C\sqrt{\mathrm{Reg}_\ell(c)}$.
-  \item \textbf{Tính nhất quán} (consistency): tối thiểu hóa exponential/logistic loss là nhất quán với tối thiểu hóa rank loss.
-\end{enumerate}
-
-% ============================================================
-\section{Thiết lập và ký hiệu}
-% ============================================================
-
-\subsection{Bài toán phân loại nhị phân -- nền tảng}
-
-Cho cặp ngẫu nhiên $(x, y) \in \calX \times \{-1, +1\}$ được sinh theo phân phối $P(x, y)$. Một bộ phân loại $c: \calX \to \R$ có \textbf{rủi ro phân loại} (classification risk):
-\begin{equation}
-  L_\ell(c) := \E\bigl[\ell(y,\, c(x))\bigr]
-  = \int \ell(y, c(x))\, dP(x,y),
-  \label{eq:class_risk}
-\end{equation}
-với $\ell: \{-1,+1\} \times \R \to \R_{\geq 0}$ là hàm mất mát. \textbf{Bộ phân loại Bayes} là:
-\begin{equation}
-  c^*(x) = \arg\min_z \E\bigl[\ell(y, z) \mid x\bigr].
-\end{equation}
-\textbf{Hối tiếc} (regret) của $c$ được định nghĩa là:
-\begin{equation}
-  \mathrm{Reg}_\ell(c) = L_\ell(c) - L_\ell^*,
-  \quad \text{trong đó } L_\ell^* := L_\ell(c^*).
-\end{equation}
-
-\subsection{Bài toán xếp hạng bipartite}
-
-\begin{dinh_nghia}{Xếp hạng bipartite (Bipartite Ranking)}{bipartite_ranking}
-  Trong bài toán xếp hạng bipartite, mỗi điểm $x \in \calX$ thuộc một trong hai lớp: dương ($y=+1$) hoặc âm ($y=-1$). Mục tiêu là học một hàm $c: \calX \to \R$ sao cho $c(x') > c(x)$ với mọi $x'$ dương và $x$ âm với xác suất cao nhất.
-\end{dinh_nghia}
-
-\textbf{Rủi ro xếp hạng} (rank risk) được đo bằng xác suất xếp sai thứ tự một cặp (dương, âm):
-\begin{equation}
-  \Lrank(r) := \Prob\bigl(r(x, x') = -1 \mid y > y'\bigr)
-  + \tfrac{1}{2}\Prob\bigl(r(x, x') = 0 \mid y > y'\bigr),
-  \label{eq:rank_risk}
-\end{equation}
-với $x \sim P(\cdot \mid y=+1)$ và $x' \sim P(\cdot \mid y'=-1)$ độc lập. Bộ xếp hạng Bayes:
-\begin{equation}
-  r^*(x, x') = \sgn\bigl(\eta(x) - \eta(x')\bigr), \quad \eta(x) = P(y=1 \mid x).
-  \label{eq:bayes_ranker}
-\end{equation}
-
-Mỗi bộ phân loại $c$ được chuyển thành bộ xếp hạng $r_c(x, x') = \sgn(c(x) - c(x'))$. Bài báo ký hiệu $\Lrank(c) := \Lrank(r_c)$ và \textbf{hối tiếc xếp hạng}:
-\begin{equation}
-  \Regrank(c) = \Lrank(c) - L_{\mathrm{rank}}^*.
-\end{equation}
-
-\begin{lienhe_ly_thuyet}
-  Định nghĩa \eqref{eq:rank_risk} và bộ xếp hạng Bayes \eqref{eq:bayes_ranker} hoàn toàn nhất quán với định nghĩa trong Chương 9 \cite[Section~9.5]{FML2018}. Chương 9 định nghĩa bài toán bipartite với phân phối $D^+$ trên $\calX^+$ và $D^-$ trên $\calX^-$, và rủi ro $R(h) = \Prob_{x \sim D^-, x' \sim D^+}[h(x') < h(x)]$ -- tương đương với \eqref{eq:rank_risk} trong bài báo.
-
-  \medskip
-  \textbf{Điểm khác biệt:} Bài báo bổ sung khái niệm \emph{hối tiếc xếp hạng} (rank regret) -- một chỉ số mạnh hơn rủi ro, vì nó đo khoảng cách đến hiệu suất tối ưu. Chương 9 chủ yếu làm việc với rủi ro.
-\end{lienhe_ly_thuyet}
-
-% ============================================================
-\section{Trường hợp Hàm mất mát 0/1}
-% ============================================================
-
-\subsection{Giới hạn của hối tiếc 0/1}
-
-Câu hỏi đầu tiên: liệu có chặn $\Regrank(c) \leq f(\Regzeroone(c))$ không, với $f(x) \to 0$ khi $x \to 0$?
-
-\begin{nhan_xet_box}
-  Câu trả lời là \textbf{không}. Bộ phân loại Bayes cho hàm mất mát 0/1 là $c^*(x) = \sgn(\eta(x) - 1/2)$. Bộ xếp hạng $r_{c^*}$ do $c^*$ tạo ra \emph{không phải} là bộ xếp hạng Bayes $r^*$ trong hầu hết các phân phối, do đó $\Regrank(c^*) > 0$ mặc dù $\Regzeroone(c^*) = 0$.
-\end{nhan_xet_box}
-
-Nguyên nhân căn bản: $c^*$ (Bayes classifier 0/1) chỉ quan tâm đến \emph{dấu} của $\eta(x) - 1/2$, còn $r^*$ cần biết \emph{thứ tự} của $\eta(x)$ -- đây là thông tin phong phú hơn.
-
-\subsection{Chặn rủi ro qua 0/1 loss}
-
-\begin{bo_de}{}{lemma31}
-  Cho bộ phân loại $c$. Đặt $\alpha = P(c(x) \leq 0, y=+1)$ (xác suất âm giả) và $\beta = P(c(x) \geq 0, y=-1)$ (xác suất dương giả), $p = P(y=+1)$. Khi đó:
-  \begin{equation}
-    \Lrank(c) \leq \frac{\alpha}{p} + \frac{\beta}{1-p} - \alpha\beta\, p(1-p).
-    \label{eq:lemma31}
-  \end{equation}
-\end{bo_de}
-
-\begin{proof}
-  Xét sự kiện $E$: chọn một cặp $(x, y=+1)$ và $(x', y'=-1)$ độc lập. Xác suất sai thứ tự chỉ xảy ra khi $(x, +1)$ là âm giả (xác suất $\alpha/p$ trong $E$) hoặc $(x', -1)$ là dương giả (xác suất $\beta/(1-p)$ trong $E$). Hai sự kiện này độc lập (do hai điểm lấy mẫu độc lập), nên xác suất hợp của chúng là:
-  \begin{equation*}
-    \frac{\alpha}{p} + \frac{\beta}{1-p} - \frac{\alpha}{p} \cdot \frac{\beta}{1-p}
-    = \frac{\alpha}{p} + \frac{\beta}{1-p} - \frac{\alpha\beta}{p(1-p)}.
-  \end{equation*}
-  Nhân với $P(E) = p(1-p)$ và chia để thu được \eqref{eq:lemma31}.
-\end{proof}
-
-\begin{dinh_ly}{Chặn rủi ro -- 0/1 loss}{thm31}
-  Với phân phối $P$ có xác suất lớp dương $p$, với mọi bộ phân loại $c$:
-  \begin{equation}
-    \Lrank(c) \leq \frac{\Lzeroone(c)}{\min\{p,\, 1-p\}}.
-    \label{eq:thm31}
-  \end{equation}
-\end{dinh_ly}
-
-\begin{proof}
-  Từ Bổ đề \ref{lem:lemma31}, bỏ số hạng âm và áp dụng $\alpha + \beta = \Lzeroone(c)$:
-  \begin{equation*}
-    \Lrank(c) \leq \frac{\alpha}{p} + \frac{\beta}{1-p}
-    \leq \frac{\alpha + \beta}{\min\{p, 1-p\}} = \frac{\Lzeroone(c)}{\min\{p, 1-p\}}.
-    \qedhere
-  \end{equation*}
-\end{proof}
-
-\begin{nhan_xet_box}
-  \textbf{Hàm ý thực tiễn:} Chặn \eqref{eq:thm31} cho thấy $\Lzeroone(c) \to 0 \Rightarrow \Lrank(c) \to 0$, tức là phân loại tốt dẫn đến xếp hạng tốt. Tuy nhiên, hằng số $1/\min\{p, 1-p\}$ \emph{phụ thuộc vào phân phối lớp}: khi lớp mất cân bằng nặng (ví dụ $p \to 0$ hoặc $p \to 1$), chặn này trở nên rất lỏng. Ví dụ, bộ phân loại đa số (luôn dự đoán lớp phổ biến hơn) có $\Lzeroone = \min\{p, 1-p\}$ nhưng $\Lrank = 1/2$ -- chặn này bằng 1, không cho thông tin gì.
-\end{nhan_xet_box}
-
-\subsection{Hàm mất mát cân bằng (Balanced Loss)}
-
-Từ quan sát rằng $\alpha$ và $\beta$ tác động khác nhau đến \eqref{eq:lemma31} (với trọng số $1/p$ và $1/(1-p)$), bài báo đề xuất tối thiểu hóa \textbf{hàm mất mát 0/1 cân bằng}:
-\begin{equation}
-  \ell_b(y, z) = w(y) \cdot \mathbbm{1}[yz \leq 0],
-  \quad w(+1) = \frac{1}{2p},\; w(-1) = \frac{1}{2(1-p)}.
-  \label{eq:balanced_loss}
-\end{equation}
-
-\begin{he_qua}{}{cor_balanced}
-  Với hàm mất mát cân bằng \eqref{eq:balanced_loss}:
-  \begin{equation}
-    \Lrank(c) \leq 2\Lb(c),
-    \label{eq:balanced_bound}
-  \end{equation}
-  với $\Lb(c)$ là rủi ro cân bằng kỳ vọng của $c$.
-\end{he_qua}
-
-\begin{proof}
-  Đây là trường hợp đặc biệt của Định lý~\ref{thm:thm31} với $p = 1/2$ (phân phối cân bằng). Cụ thể, việc áp dụng trọng số $w(y)$ tương đương với việc tái chuẩn hóa xác suất lớp về $P'(y=+1)=P'(y=-1)=1/2$, và Định lý~\ref{thm:thm31} cho $\Lrank(c) \leq \Lzeroone'(c)/\min\{1/2,1/2\} = 2\Lb(c)$.
-\end{proof}
-
-\begin{lienhe_ly_thuyet}
-  Khái niệm cân bằng lớp trong \eqref{eq:balanced_loss} có liên hệ trực tiếp với \textbf{Corollary~9.1} trong \cite[Section~9.5]{FML2018}: chặn margin cho xếp hạng bipartite với kernel có dạng $R(h) \leq R_\rho(h) + 4r^2\Lambda^2/(\rho^2 m) + \sqrt{\log(1/\delta)/(2m)}$. Trong trường hợp lớp mất cân bằng, các chặn này có thể cần điều chỉnh tương tự thông qua cân bằng trọng số.
-
-  \medskip
-  Ngoài ra, ý tưởng cân bằng trọng số (cost-sensitive learning) có mặt rải rác trong Chương 9, đặc biệt trong bối cảnh bipartite ranking khi tính toán AUC (Section~9.5.2) -- mặc dù Chương 9 không phát biểu tường minh chặn như \eqref{eq:balanced_bound}.
-\end{lienhe_ly_thuyet}
-
-% ============================================================
-\section{Trường hợp Hàm mất mát Margin}
-% ============================================================
-
-\subsection{Chặn rủi ro cho hàm mất mát margin}
-
-Một hàm mất mát margin có dạng $\ell(y, z) = \phi(yz)$, với $\phi: \R \to \R_{\geq 0}$ giảm nghiêm ngặt, không âm, và chuẩn hóa $\phi(0) = 1$. Điều kiện này đảm bảo $\ell$ là cận trên của $\ell_{0/1}$: $\phi(u) \geq \mathbbm{1}[u \leq 0]$.
-
-\begin{he_qua}{Chặn rủi ro margin}{cor_margin_risk}
-  Với hàm mất mát margin $\phi$ thỏa điều kiện trên và phân phối cân bằng $P(y=+1)=P(y=-1)=1/2$:
-  \begin{equation}
-    \Lrank(c) \leq 2L_\phi(c).
-    \label{eq:margin_risk_bound}
-  \end{equation}
-\end{he_qua}
-
-\begin{proof}
-  Do $\phi(u) \geq \mathbbm{1}[u \leq 0]$, ta có $L_\phi(c) \geq \Lzeroone(c)$. Áp dụng Định lý~\ref{thm:thm31} với $p=1/2$: $\Lrank(c) \leq \Lzeroone(c)/\min\{1/2,1/2\} = 2\Lzeroone(c) \leq 2L_\phi(c)$.
-\end{proof}
-
-\subsection{Chặn hối tiếc -- Kết quả trung tâm của bài báo}
-
-Kết quả mạnh hơn và là đóng góp cốt lõi của bài báo là chặn \emph{hối tiếc} (regret bound) -- không chỉ chặn rủi ro.
-
-\begin{dinh_ly}{Chặn hối tiếc -- Exponential và Logistic Loss}{thm_regret}
-  Cho $\ell(y, z) = w(y)\phi(yz)$ là hàm mất mát margin cân bằng với $w(y) = 1/(2P(y))$. Các chặn hối tiếc sau đây thỏa mãn:
-  \begin{align}
-    \Regrank(c) &\leq \frac{3\sqrt{2}}{2}\sqrt{\Regexp(c)}
-    \quad \text{(exponential loss: } \phi(z) = e^{-z}\text{)},
-    \label{eq:regret_exp}\\[6pt]
-    \Regrank(c) &\leq 2\sqrt{\Reglog(c)}
-    \quad \text{(logistic loss: } \phi(z) = \log(1 + e^{-z})\text{)}.
-    \label{eq:regret_log}
-  \end{align}
-\end{dinh_ly}
-
-\begin{proof}[Phác thảo chứng minh]
-  Chứng minh gồm ba bước chính:
-
-  \medskip
-  \textbf{Bước 1: Rút gọn xếp hạng về phân loại.}
-  Xây dựng bài toán phân loại mới: từ các cặp $(x, y)$ và $(x', y')$ độc lập trong bài toán gốc, tạo đối tượng mới $\tilde{x} = (x, x')$, $\tilde{y} = (y - y')/2$. Bỏ các cặp có $\tilde{y} = 0$. Bộ phân loại mới là $\tilde{c}(\tilde{x}) = c(x) - c(x')$.
-
-  Khi đó, hàm mất mát 0/1 của $\tilde{c}$ trong bài toán mới \emph{bằng} rank loss của $c$ trong bài toán gốc:
-  \begin{equation}
-    \Lzeroone(\tilde{c}) = \Lrank(c),
-    \quad \text{và} \quad
-    \Regzeroone(\tilde{c}) = \Regrank(c).
-    \label{eq:reduction}
-  \end{equation}
-
-  \medskip
-  \textbf{Bước 2: Áp dụng chặn regret của Bartlett et al. (2006).}
-  Từ \cite{Bartlett2006}, với mọi bộ phân loại $c$:
-  \begin{equation}
-    \Regzeroone(\tilde{c}) \leq f\bigl(\mathrm{Reg}_\phi(\tilde{c})\bigr),
-    \label{eq:bartlett}
-  \end{equation}
-  với $f(x) \leq \sqrt{2x}$ cho cả exponential loss lẫn logistic loss (khi regret đủ nhỏ).
-
-  \medskip
-  \textbf{Bước 3: Liên hệ regret của $\tilde{c}$ với regret của $c$.}
-  Đây là bước khó nhất. Với exponential loss, có thể chứng minh:
-  \begin{equation}
-    \Lexp(\tilde{c}) \leq L_{\exp}^2(c),
-    \quad
-    \Lexp(\tilde{c}^*) = L_{\exp}^2(c^*),
-  \end{equation}
-  dẫn đến:
-  \begin{align}
-    \Regexp(\tilde{c}) &= \Lexp(\tilde{c}) - \Lexp(\tilde{c}^*)
-    \leq L_{\exp}^2(c) - L_{\exp}^2(c^*) \nonumber\\
-    &= \bigl(\Regexp(c) + 2\Lexp(c^*)\bigr)\Regexp(c)
-    \leq \frac{9}{4}\Regexp(c),
-    \label{eq:exp_step3}
-  \end{align}
-  vì $\Lexp(c^*) \leq 1$ với mọi phân phối. Kết hợp \eqref{eq:reduction}, \eqref{eq:bartlett}, \eqref{eq:exp_step3}:
-  \begin{equation*}
-    \Regrank(c) = \Regzeroone(\tilde{c}) \leq \sqrt{2\Regexp(\tilde{c})}
-    \leq \sqrt{2 \cdot \frac{9}{4}\Regexp(c)} = \frac{3\sqrt{2}}{2}\sqrt{\Regexp(c)}.
-  \end{equation*}
-
-  Với logistic loss, phân tích phức tạp hơn nhưng cũng cho được $\Reglog(\tilde{c}) \leq 2\Reglog(c)$, dẫn đến \eqref{eq:regret_log}.
-
-  \textit{Trường hợp phân phối tùy ý} được xử lý bằng cách giới thiệu phân phối $P'$ với $P'(y) = 1/2$ và $P'(x|y) = P(x|y)$, rồi chứng minh rằng rank regret và margin loss regret không thay đổi khi chuyển từ $P$ sang $P'$ (vì phân phối cặp chỉ phụ thuộc $P(x|y)$).
-\end{proof}
-
-\begin{lienhe_ly_thuyet}
-  \textbf{Kỹ thuật rút gọn} trong Bước 1 (rút gọn xếp hạng về phân loại) là kỹ thuật tiêu chuẩn được dùng trong \cite[Section~9.5]{FML2018}. Cụ thể, Chương 9 cũng biến đổi bài toán xếp hạng thành bài toán phân loại thông qua không gian cặp -- đây là nền tảng lý thuyết chung cho các giải thuật như \textbf{RankSVM} (Section~9.3) và \textbf{RankBoost} (Section~9.4).
-
-  \medskip
-  \textbf{Ý nghĩa của tốc độ hội tụ:} Chặn $\Regrank(c) = O(\sqrt{\mathrm{Reg}_\phi(c)})$ cho thấy tốc độ hội tụ của rank regret chậm hơn tối đa $O(\sqrt{\cdot})$ so với classification regret. Trong Chương 9, \textbf{Định lý 9.2} (empirical error của RankBoost) và \textbf{Corollary~9.2} (margin bound cho ensemble) cho thấy tốc độ hội tụ của rank loss theo số vòng lặp $T$ và cỡ mẫu $m$ -- hai góc nhìn bổ sung cho nhau.
-
-  \medskip
-  \textbf{Tính nhất quán} (consistency): Bài báo chứng minh rằng minimizing exponential hoặc logistic loss là \emph{nhất quán} với minimizing rank loss (tức là $\mathrm{Reg}_\phi(c) \to 0 \Rightarrow \Regrank(c) \to 0$). Điều này không thành lập cho hàm 0/1 loss -- một phân tích về sự không nhất quán của 0/1 loss cho xếp hạng mà Chương 9 [FML] không đề cập trực tiếp nhưng ngầm liên quan đến phân tích AUC trong Section~9.5.2.
-\end{lienhe_ly_thuyet}
-
-\subsection{Phân tích: Balancing với Margin Loss}
-
-Một câu hỏi thú vị bài báo đặt ra: trong trường hợp margin loss, liệu cân bằng lớp có giúp ích như trường hợp 0/1 loss không?
-
-\begin{nhan_xet_box}
-  \textbf{Kết quả:} Không, ít nhất ở mức độ lý thuyết tổng quát. Với exponential loss và logistic loss, bộ phân loại Bayes có dạng $c^*(x) = \log(\eta(x)/(1-\eta(x)))$ (hoặc một bội số của nó). Khi áp dụng cân bằng lớp (thay $P(y)$ bởi $1/2$), nghiệm tối ưu chỉ dịch một hằng số $c_0 = \log(w(+1)/w(-1))$. Vì thứ tự của $c(x) - c(x')$ không thay đổi khi cộng hằng số, nên rank loss không thay đổi.
-
-  \medskip
-  Điều này có nghĩa: với margin loss, không cần cân bằng lớp vẫn được các chặn trong Định lý~\ref{thm:thm_regret} -- điều này giải thích thực nghiệm trong bài báo cho thấy logistic loss hoạt động tốt ngay cả với dữ liệu mất cân bằng.
-\end{nhan_xet_box}
-
-% ============================================================
-\section{Thực nghiệm kiểm chứng}
-% ============================================================
-
-\subsection{Thiết kế thực nghiệm}
-
-Bài báo so sánh ba thuật toán tối thiểu hóa ba hàm mục tiêu khác nhau, tất cả đều là phân loại tuyến tính với chính quy hóa L2:
-\begin{enumerate}
-  \item \textbf{Exponential loss} (tương đương AdaBoost/LogitBoost khi hội tụ).
+  \item \textbf{Exponential loss} (tương tự thuật toán boosting).
   \item \textbf{Logistic loss} (hồi quy logistic).
-  \item \textbf{Pairwise hinge loss} -- SVM-OR \cite{Joachims2006}: cận trên lồi chặt nhất của rank loss, sử dụng $mn$ cặp.
+  \item \textbf{Pairwise hinge loss} (thuật toán SVM-OR tối ưu hóa trực tiếp trên $O(mn)$ cặp mẫu).
 \end{enumerate}
 
-Dữ liệu thực nghiệm gồm:
-\begin{itemize}
-  \item \textbf{Dữ liệu tổng hợp} (artificial data): 4 kịch bản (tuyến tính/phi tuyến) $\times$ (cân bằng/mất cân bằng $p=0.9$), mỗi kịch bản 30 mô hình $\times$ 30 tập huấn luyện.
-  \item \textbf{Dữ liệu thực} (real data): 9 bộ dữ liệu nhỏ (UCI, 10-fold CV $\times$ 10 lần) và 2 bộ lớn (Covtype, KDD04).
-\end{itemize}
-
-\subsection{Kết quả và nhận xét}
-
-\begin{table}[htbp]
+\begin{table}[H]
   \centering
-  \caption{Rank loss trên một số bộ dữ liệu thực (trích từ bài báo). Giá trị nhỏ hơn là tốt hơn.}
-  \label{tab:results}
+  \caption{Rủi ro phân hạng trên một số bộ dữ liệu thực. Giá trị nhỏ hơn là tốt hơn.}
+  \vspace{0.2cm}
   \begin{tabular}{lccc}
     \toprule
     \textbf{Bộ dữ liệu} & \textbf{Exponential} & \textbf{SVM-OR} & \textbf{Logistic} \\
     \midrule
     Breast-w  & 0.0051 & \textbf{0.0049} & 0.0054 \\
-    Breast-c  & 0.3077 & \textbf{0.2955} & 0.3005 \\
     Colic     & 0.1251 & 0.1352 & \textbf{0.1179} \\
     Diabetes  & 0.1724 & \textbf{0.1702} & 0.1804 \\
-    Haberman  & 0.3684 & \textbf{0.3153} & 0.3820 \\
-    Ionosphere & 0.0811 & \textbf{0.0773} & 0.0884 \\
-    Vote      & 0.0098 & 0.0103 & \textbf{0.0096} \\
+    Ionosphere& 0.0811 & \textbf{0.0773} & 0.0884 \\
     Covtype   & 0.1635 & \textbf{0.1604} & 0.1623 \\
-    KDD04     & 0.2114 & \textbf{0.2083} & 0.2143 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-Kết quả nổi bật:
-\begin{enumerate}
-  \item \textbf{Không có thuật toán nào vượt trội nhất quán}: SVM-OR đôi khi tốt hơn (7/9 bộ dữ liệu), nhưng sự khác biệt rất nhỏ (thường $< 0.01$ rank loss).
-  \item \textbf{Logistic loss cạnh tranh hoàn toàn với SVM-OR} -- đây là điều đáng chú ý vì logistic loss đơn giản hơn nhiều và không cần tối ưu hóa trên $mn$ cặp.
-  \item \textbf{Exponential loss kém ổn định hơn} -- do thiếu độ bền (robustness) với nhiễu, như đã được phân tích trong \cite{Hastie2003}.
-  \item \textbf{Dữ liệu mất cân bằng không làm hại logistic loss}: phù hợp với phân tích lý thuyết về balancing trong Section~4.2 của bài báo.
-\end{enumerate}
+\textbf{Nhận xét kết quả:}
+Thuật toán SVM-OR (tương đương RankSVM trong Mục 9.3) đôi khi cho kết quả tốt hơn nhưng độ chênh lệch vô cùng nhỏ. Đặc biệt, \textbf{Logistic loss cạnh tranh ngang ngửa} với SVM-OR dù chỉ cần độ phức tạp tính toán $O(n)$ thay vì $O(mn)$. Điều này xác nhận về mặt thực nghiệm các luận điểm lý thuyết: tối thiểu hóa hàm mất mát đơn biến phù hợp hoàn toàn có khả năng phân hạng xuất sắc.
 
-\begin{lienhe_ly_thuyet}
-  Kết quả thực nghiệm này bổ sung trực tiếp cho nội dung Chương 9 [FML]. \textbf{Section~9.3} giới thiệu RankSVM (tương đương SVM-OR) được chứng minh lý thuyết qua Corollary~9.1 với $O(mn)$ điều kiện. Bài báo cho thấy logistic loss (tối ưu hóa $O(n)$) đạt hiệu suất tương đương -- xác nhận rằng các chặn tổng quát hóa cho xếp hạng không nhất thiết yêu cầu phương pháp pairwise.
+\subsubsection{Đánh giá phê bình và hướng mở rộng}
 
-  \medskip
-  Về \textbf{RankBoost} (Section~9.4): bài báo không so sánh trực tiếp với RankBoost vì RankBoost trong bipartite ranking hội tụ về exponential loss \cite[Theorem~9.2]{FML2018} -- tức là exponential loss trong bài báo đã gián tiếp đại diện cho RankBoost khi huấn luyện đến hội tụ.
-\end{lienhe_ly_thuyet}
-
-% ============================================================
-\section{Đánh giá phê bình và câu hỏi mở}
-% ============================================================
-
-\subsection{Điểm mạnh}
-
-\begin{enumerate}
-  \item \textbf{Nền tảng lý thuyết vững chắc}: Bài báo cung cấp chứng minh chặt chẽ cho cả risk bounds và regret bounds -- loại kết quả mà các bài báo thực nghiệm trước đó còn thiếu.
-
-  \item \textbf{Kết quả mang tính thực tiễn cao}: Chứng minh rằng thuật toán phân loại đơn giản (logistic loss, độ phức tạp $O(n)$) có thể thay thế thuật toán xếp hạng pairwise phức tạp (SVM-OR, độ phức tạp $O(mn)$) mà không mất nhiều chất lượng.
-
-  \item \textbf{Giải thích hiện tượng đã quan sát}: Nhiều công trình thực nghiệm trước đây nhận thấy margin loss hoạt động tốt cho AUC, nhưng chưa có giải thích lý thuyết. Bài báo này lấp đầy khoảng trống đó.
-\end{enumerate}
-
-\subsection{Hạn chế}
-
-\begin{enumerate}
-  \item \textbf{Chặn có thể không chặt}: Hằng số $(3\sqrt{2}/2 \approx 2.12)$ trong \eqref{eq:regret_exp} và hệ số 2 trong \eqref{eq:regret_log} có thể không là tối ưu. Bài báo không cung cấp chặn dưới (lower bound) để biết các hằng số này có thể cải thiện không.
-
-  \item \textbf{Chỉ phân tích exponential và logistic}: Bài báo tự đặt câu hỏi mở: liệu tất cả các margin loss ước lượng xác suất điều kiện có đều cho chặn regret không? Câu trả lời chưa được giải đáp trong bài báo.
-
-  \item \textbf{Phân tích finite-sample}: Bài báo làm việc ở mức \emph{phân phối} (population level), không phân tích tốc độ hội tụ finite-sample (như Theorem~9.1 trong Chương 9). Kết hợp regret bound với generalization bound (kiểu Rademacher complexity) sẽ cho bức tranh hoàn chỉnh hơn.
-
-  \item \textbf{Hàm mô hình tuyến tính}: Thực nghiệm chỉ dùng bộ phân loại tuyến tính với chính quy hóa L2 -- hạn chế khả năng kiểm chứng với các mô hình phi tuyến phức tạp.
-\end{enumerate}
-
-\subsection{Câu hỏi mở và hướng mở rộng}
-
-\begin{tcolorbox}[colback=highlightyellow, colframe=orange!80!black,
-  title=\textbf{Câu hỏi nghiên cứu mở}, fonttitle=\bfseries]
-  \begin{enumerate}
-    \item \textit{Regret bound cho mọi margin loss nhất quán với ước lượng xác suất?} -- Câu hỏi mà chính bài báo đặt ra như hướng nghiên cứu tương lai.
-    \item \textit{Có chặn regret nào không cần điều kiện $\mathrm{Reg}_\phi(c) \leq 1/4$ không?} (Điều kiện này được dùng trong chứng minh \eqref{eq:exp_step3}.)
-    \item \textit{Phân tích cho bài toán k-partite ranking?} -- Chương 9, Exercise~9.8 đặt ra câu hỏi này.
-    \item \textit{Mở rộng sang các tiêu chí xếp hạng khác} như NDCG, precision@k (được thảo luận trong Section~9.7 Chương 9)?
-  \end{enumerate}
-\end{tcolorbox}
-
-% ============================================================
-\section{Tóm tắt}
-% ============================================================
-
-Bài báo \cite{kotlowski2011bipartite} trả lời câu hỏi cơ bản nhưng quan trọng trong học máy xếp hạng: \emph{tối thiểu hóa hàm mất mát đơn giản có đủ không để đạt hiệu suất xếp hạng tốt?}
-
-Kết luận chính: \textbf{Có}, với điều kiện sử dụng hàm mất mát margin (exponential hoặc logistic) thay vì 0/1 loss đơn thuần. Cụ thể:
+\textbf{Điểm mạnh:}
 \begin{itemize}
-  \item Hàm mất mát 0/1 không nhất quán với rank loss nhưng vẫn cho chặn rủi ro hữu ích khi phân phối lớp cân bằng.
-  \item Hàm mất mát cân bằng cải thiện đáng kể cho lớp mất cân bằng.
-  \item Exponential/logistic loss cho chặn hối tiếc $O(\sqrt{\mathrm{Reg}})$, chứng minh tính nhất quán và tốc độ hội tụ.
+    \item Cung cấp nền tảng lý thuyết vững chắc (chứng minh chặt chẽ cả chặn rủi ro và chặn hối tiếc) giải thích tại sao các thuật toán như hồi quy logistic lại tối ưu AUC rất tốt trong thực tế.
+    \item Gợi ý một giải pháp thực tiễn có khả năng thay thế các phương pháp tiếp cận pairwise phức tạp, giúp giảm chi phí tính toán rõ rệt.
 \end{itemize}
 
-Bài báo cung cấp nền tảng lý thuyết vững chắc cho thực hành phổ biến: dùng logistic regression hoặc thuật toán boosting để tối ưu AUC -- một bổ sung lý thuyết quan trọng cho khung phân tích trong Chương 9 [FML], đặc biệt là bổ sung khía cạnh \emph{nhất quán} và \emph{regret} mà chương sách không phân tích tường minh.
+\textbf{Hạn chế \& Câu hỏi mở:}
+\begin{itemize}
+    \item Các hằng số trong chặn hối tiếc có thể vẫn chưa phải là tối ưu nhất.
+    \item Các phân tích tập trung chủ yếu ở cấp độ phân phối xác suất (population level), chưa đi sâu vào tốc độ hội tụ hữu hạn mẫu (finite-sample) như một số định lý trong Chương 9.
+    \item Cần thêm nghiên cứu để mở rộng bài toán sang các bối cảnh phức tạp hơn như k-partite ranking hoặc áp dụng trên các tiêu chuẩn đo lường tối ưu công cụ tìm kiếm như NDCG.
+\end{itemize}
 
-% ============================================================
-% BIBLIOGRAPHY
-% ============================================================
-\newpage
-\begin{thebibliography}{99}
+\subsubsection{Demo thử nghiệm}
 
-\bibitem{kotlowski2011bipartite}
-W.~Kotłowski, K.~Dembczyński, và E.~Hüllermeier.
-\newblock Bipartite ranking through minimization of univariate loss.
-\newblock Trong \emph{Proceedings of the 28th International Conference on Machine Learning (ICML)}, trang 1--8, Bellevue, WA, USA, 2011.
+Để làm rõ hơn luận điểm của bài báo, nhóm đã tiến hành xây dựng một thực nghiệm mô phỏng bằng Python. Mục tiêu là so sánh trực tiếp hai hướng tiếp cận trên một tập dữ liệu mất cân bằng nghiêm trọng (100 mẫu dương tính và 1000 mẫu âm tính):
 
-\bibitem{FML2018}
-M.~Mohri, A.~Rostamizadeh, và A.~Talwalkar.
-\newblock \emph{Foundations of Machine Learning}, ấn bản lần 2.
-\newblock MIT Press, 2018.
+\begin{enumerate}
+    \item \textbf{Mô hình Univariate (Logistic Regression):} Tối ưu hóa hàm Logistic Loss trên 1100 điểm dữ liệu độc lập, độ phức tạp $O(m+n)$.
+    \item \textbf{Mô hình Pairwise (Hinge Loss qua PyTorch):} Tối ưu hóa Margin Ranking Loss bằng cách xét duyệt toàn bộ không gian 100,000 cặp dữ liệu, độ phức tạp $O(mn)$.
+\end{enumerate}
 
-\bibitem{Bartlett2006}
-P.~L.~Bartlett, M.~I.~Jordan, và J.~D.~McAuliffe.
-\newblock Convexity, classification, and risk bounds.
-\newblock \emph{Journal of the American Statistical Association}, 101(473):138--156, 2006.
+\begin{figure}[H]
+    \centering
+    % Đảm bảo ảnh roc_curve_comparison.png nằm trong thư mục figures cùng cấp với file main.tex
+    \includegraphics[width=0.8\textwidth]{figures/roc_curve_comparison.png}
+    \caption{Đường cong ROC so sánh hiệu suất giữa mô hình Univariate và Pairwise trên tập dữ liệu mô phỏng mất cân bằng.}
+    \label{fig:roc_comparison}
+\end{figure}
 
-\bibitem{Freund2003}
-Y.~Freund, R.~Iyer, R.~E.~Schapire, và Y.~Singer.
-\newblock An efficient boosting algorithm for combining preferences.
-\newblock \emph{Journal of Machine Learning Research}, 4:933--969, 2003.
+\textbf{Kết luận từ thực nghiệm:} 
+Như quan sát trên Hình \ref{fig:roc_comparison}, mặc dù mô hình Univariate hoàn toàn không sử dụng thông tin bắt cặp và được huấn luyện trên dữ liệu mất cân bằng nặng (tỷ lệ 10:1), nó vẫn đạt được chỉ số xếp hạng $\text{AUC} \approx 0.7909$, gần như bám sát và cạnh tranh sòng phẳng với mức $\text{AUC} \approx 0.7957$ của phương pháp Pairwise truyền thống. Kết quả này phản ánh chính xác Định lý của bài báo: tối thiểu hóa hàm mất mát margin đơn biến là một công cụ mạnh mẽ, ổn định và tiết kiệm tài nguyên tính toán cho bài toán phân hạng Bipartite.
 
-\bibitem{Joachims2006}
-T.~Joachims.
-\newblock Training linear {SVM}s in linear time.
-\newblock Trong \emph{ACM SIGKDD}, trang 217--226, 2006.
-
-\bibitem{Cortes2003}
-C.~Cortes và M.~Mohri.
-\newblock {AUC} optimization vs.\ error rate minimization.
-\newblock Trong \emph{Advances in Neural Information Processing Systems (NIPS)}, MIT Press, 2003.
-
-\bibitem{Hastie2003}
-T.~Hastie, R.~Tibshirani, và J.~H.~Friedman.
-\newblock \emph{Elements of Statistical Learning: Data Mining, Inference, and Prediction}.
-\newblock Springer, 2003.
-
-\bibitem{Ailon2008}
-N.~Ailon và M.~Mohri.
-\newblock An efficient reduction of ranking to classification.
-\newblock Trong \emph{Proceedings of COLT}, trang 87--98, 2008.
-
-\bibitem{Clemenson2008}
-S.~Clémencon, G.~Lugosi, và N.~Vayatis.
-\newblock Ranking and empirical minimization of {U}-statistics.
-\newblock \emph{Annals of Statistics}, 36:844--874, 2008.
-
-\end{thebibliography}
-
-\end{document}
+% --- KẾT THÚC NỘI DUNG part3_paper1.tex ---
