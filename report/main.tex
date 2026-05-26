@@ -19,6 +19,10 @@
 \usepackage{booktabs}
 \usepackage{float}
 \usepackage{caption}
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
+\usepackage{tcolorbox}
 
 % --- Title Page ---
 \title{
@@ -39,36 +43,14 @@
 \tableofcontents
 \newpage
 
-\section{Giới thiệu Chương sách (Chương 9: Ranking)}
-\textit{(Thành viên 1 thực hiện phần tóm tắt tổng quan bài toán phân hạng)}
-
-\section{Phần 1: Báo cáo lý thuyết}
-\subsection{9.1. The problem of ranking}
-\textit{(Thành viên 1 thực hiện)}
-
-\subsection{9.2. Generalization bound}
-\textit{(Thành viên 1 thực hiện)}
-
-\subsection{9.3. Ranking with SVMs}
-\textit{(Thành viên 1 thực hiện)}
-
-\subsection{9.4. RankBoost}
-\textit{(Thành viên 2 thực hiện)}
-
-\subsection{9.5. Bipartite ranking}
-\textit{(Thành viên 2 thực hiện)}
-
-\subsection{9.6. Preference-based setting}
-\textit{(Thành viên 3 thực hiện)}
-
-\subsection{9.7. Discussion}
-\textit{(Thành viên 3 thực hiện)}
-
+% --- Import Theoretical Foundation (Member 1, 2, 3) ---
+\input{part1_foundation.tex}
 \newpage
+
 % --- Import Experimental Results (Member 4) ---
 \input{part2_experiments.tex}
-
 \newpage
+
 \section{Phần 3: Nghiên cứu tiên tiến liên quan}
 
 % --- BÀI BÁO SỐ 1  ---

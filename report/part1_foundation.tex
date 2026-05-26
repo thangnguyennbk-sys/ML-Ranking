@@ -1,0 +1,355 @@
+% ============================================================
+% PHẦN 1: BÁO CÁO LÝ THUYẾT
+% Nội dung dựa trên Chương 9: Ranking - Foundations of Machine Learning
+% ============================================================
+
+
+
+% ============================================================
+\section{Phần 1: Báo cáo Lý Thuyết}
+
+
+% ============================================================
+\subsection{Bài Toán Phân Hạng}
+\vspace{0.5cm}
+
+% ============================================================
+\subsection{Chặn Tổng Quát Dựa Trên Lề}
+\vspace{0.5cm}
+
+% ============================================================
+\subsection{Xếp Hạng Với SVM}
+\vspace{0.5cm}
+
+% ============================================================
+\subsection{RankBoost}
+\vspace{0.5cm}
+
+% ============================================================
+\subsection{Xếp Hạng Nhị Phân (Bipartite Ranking)}
+\vspace{0.5cm}
+
+% ============================================================
+% PHẦN 9.6: PREFERENCE-BASED SETTING
+% ============================================================
+\subsection{Cách Tiếp Cận Dựa Trên Ưu Tiên (Preference-Based Setting)}
+
+\subsubsection{Động Lực và Ý Tưởng}
+
+Cách tiếp cận dựa trên ưu tiên khác biệt so với cách tiếp cận dựa trên điểm số:
+\begin{itemize}
+    \item \textbf{Mục tiêu khác}: Thay vì xây dựng một hàm cho điểm toàn cục cho toàn bộ không gian $\mathcal{X}$, chúng ta chỉ cần xếp hạng chính xác một tập con truy vấn (query subset) $X \subseteq \mathcal{X}$.
+    \item \textbf{Lợi ích}: Trong trực tế (ví dụ: search engine), người dùng chỉ quan tâm đến top-k kết quả cho một truy vấn cụ thể. Không cần xây dựng hàm cho điểm hoàn hảo cho tất cả điểm.
+    \item \textbf{Linh hoạt hơn}: Hàm so sánh cặp (preference function) không cần bắc cầu, giải quyết vấn đề với dữ liệu không bắc cầu.
+\end{itemize}
+
+\subsubsection{Công Thức Toán Học}
+
+Bài toán được chia thành hai giai đoạn:
+
+\textbf{Giai đoạn 1: Học hàm ưu tiên}
+
+Cho dữ liệu huấn luyện $S = \{(x_1, x'_1, y_1), \ldots, (x_m, x'_m, y_m)\}$ với $y_i \in \{-1, 0, +1\}$.
+
+Xây dựng hàm ưu tiên $h: \mathcal{X} \times \mathcal{X} \to [0,1]$ sao cho:
+\begin{itemize}
+    \item $h(u, v) \approx 1$ khi $u$ được ưu tiên hơn $v$
+    \item $h(u, v) \approx 0$ khi $v$ được ưu tiên hơn $u$
+    \item Điều kiện nhất quán theo cặp: $h(u,v) + h(v,u) = 1$ với mọi $u, v \in \mathcal{X}$
+\end{itemize}
+
+Hàm $h$ có thể được học bằng bất kỳ thuật toán phân loại nhị phân nào.
+
+\textbf{Giai đoạn 2: Sắp xếp tập con truy vấn}
+
+Cho tập con truy vấn $X \in \mathcal{X}$ (thường là một tập con hữu hạn nhỏ). Sử dụng hàm ưu tiên $h$ để xây dựng xếp hạng $\sigma: X \to \{1, \ldots, |X|\}$ sao cho chính xác nhất so với xếp hạng mục tiêu $\sigma^*$.
+
+\subsubsection{Hàm Mất Mát}
+
+Để đo lường mức độ khác biệt giữa xếp hạng dự đoán $\sigma$ và xếp hạng mục tiêu $\sigma^*$ trên tập $X$ có $n$ phần tử:
+
+\begin{equation}
+L(\sigma, \sigma^*) = \frac{2}{n(n-1)}\sum_{u \neq v} \mathbb{1}_{\sigma(u) < \sigma(v)} \mathbb{1}_{\sigma^*(v) < \sigma^*(u)}
+\end{equation}
+
+Ý tưởng: đếm số cặp $(u,v)$ mà $\sigma$ xếp sai so với $\sigma^*$.
+
+Mất mát của hàm ưu tiên đối với xếp hạng $\sigma^*$:
+\begin{equation}
+L(h, \sigma^*) = \frac{2}{n(n-1)}\sum_{u \neq v} h(u,v) \mathbb{1}_{\sigma^*(v) < \sigma^*(u)}
+\end{equation}
+
+\textbf{Ý tưởng}: Hàm ưu tiên $h$ gây lỗi khi nó chỉ ra $u$ được ưu tiên hơn $v$ (cho ra $h(u,v)$ cao) nhưng thực tế $v$ xếp cao hơn $u$ trong $\sigma^*$.
+
+\subsubsection{Định Nghĩa Regret}
+
+Regret của thuật toán xếp hạng $A$ được định nghĩa là:
+
+\begin{equation}
+\text{Reg}(A) = \mathbb{E}_{X,\sigma^*}[L(A(X), \sigma^*)] - \min_{\sigma} \mathbb{E}_{X,\sigma^*}[L(\sigma|_X, \sigma^*)]
+\end{equation}
+
+Nó đo lường mức độ hiệu năng của $A$ so với xếp hạng tối ưu nhất cho tập $X$.
+
+Tương tự, regret của hàm ưu tiên:
+\begin{equation}
+\text{Reg}(h) = \mathbb{E}_{X,\sigma^*}[L(h|_X, \sigma^*)] - \min_{h'} \mathbb{E}_{X,\sigma^*}[L(h'|_X, \sigma^*)]
+\end{equation}
+
+\subsubsection{Bài Toán Xếp Hạng Giai Đoạn Thứ Hai}
+
+\textbf{Giả định Pairwise Independence on Irrelevant Alternatives (PIIA)}:
+
+\begin{equation}
+\mathbb{E}_{\sigma^*|X_1}[\mathbb{1}_{\sigma^*(v) < \sigma^*(u)}] = \mathbb{E}_{\sigma^*|X_2}[\mathbb{1}_{\sigma^*(v) < \sigma^*(u)}]
+\end{equation}
+
+với bất kỳ $u,v \in X$ và hai tập $X_1, X_2$ chứa cả $u$ và $v$.
+
+Giả định này nói rằng: xác suất $u$ được ưu tiên hơn $v$ không phụ thuộc vào những điểm khác ngoài $u$ và $v$.
+
+\subsubsection{Thuật Toán Xác Định (Deterministic Algorithm)}
+
+\textbf{Thuật Toán Sort-by-Degree}
+
+Ý tưởng đơn giản: xếp hạng mỗi phần tử dựa trên số phần tử khác mà nó được ưu tiên hơn.
+
+\begin{algorithmic}
+\State Đầu vào: Tập $X$, hàm ưu tiên $h$
+\For{mỗi $u \in X$}
+    \State $\text{degree}(u) = \sum_{v \in X, v \neq u} h(u, v)$
+\EndFor
+\State Sắp xếp $X$ theo $\text{degree}$ giảm dần
+\State Trả về xếp hạng tương ứng
+\end{algorithmic}
+
+\textbf{Định Lý 9.3 (Chặn Mất Mát cho Sort-by-Degree)}
+
+Trong cài đặt nhị phân, các chặn mất mát và regret sau được chứng minh:
+
+\begin{equation}
+\mathbb{E}_{X,\sigma^*}[L(\mathcal{A}_{\text{sort-by-degree}}(X), \sigma^*)] \leq 2 \mathbb{E}_{X,\sigma^*}[L(h, \sigma^*)]
+\end{equation}
+
+\begin{equation}
+\text{Reg}(\mathcal{A}_{\text{sort-by-degree}}) \leq 2 \text{Reg}(h)
+\end{equation}
+
+\textbf{Ý tưởng chứng minh}: Nếu hàm $h$ mắc sai lầm (chỉ ra $u > v$ nhưng $v$ thực sự tốt hơn), sort-by-degree có thể xếp sai cặp $(u,v)$. Trong trường hợp xấu nhất, việc mắc sai lầm $k$ lần có thể dẫn đến $2k$ lỗi xếp hạng.
+
+\textbf{Hạn Chế}:
+\begin{itemize}
+    \item Factor 2 có thể quá lỏng lẻo trong một số trường hợp
+    \item Độ phức tạp tính toán là $\Omega(|X|^2)$ vì phải so sánh mọi cặp
+\end{itemize}
+
+\textbf{Định Lý 9.3 (Chặn Dưới cho Thuật Toán Xác Định)}
+
+[MỞ RỘNG] Chứng minh rằng không có thuật toán xác định nào có thể đạt được factor tốt hơn 2:
+
+\begin{equation}
+\text{Reg}(A) \geq 2 \text{Reg}(h) \quad \text{với mỗi thuật toán xác định } A
+\end{equation}
+
+\textbf{Ý tưởng chứng minh}: Xây dựng một ví dụ đối kháng (adversarial example) với 3 phần tử tạo thành một chu kỳ không bắc cầu. Bất kể thuật toán xác định chọn xếp hạng nào, luôn tồn tại sự lựa chọn của $\sigma^*$ làm cho thuật toán mắc sai lầm tối đa.
+
+Điều này gợi ý rằng cần sử dụng randomization (ngẫu nhiên hóa) để vượt qua factor 2.
+
+\subsubsection{Thuật Toán Ngẫu Nhiên (Randomized Algorithm)}
+
+\textbf{Ý Tưởng: QuickSort Ngẫu Nhiên Dựa Trên Hàm Ưu Tiên}
+
+Thay vì sử dụng một hàm so sánh bắc cầu chuẩn, chúng ta sử dụng hàm ưu tiên $h$ (có thể không bắc cầu) làm hàm so sánh. QuickSort vẫn làm việc với những đảm bảo về độ phức tạp!
+
+\begin{algorithmic}
+\State Đầu vào: Mảng $X$, hàm ưu tiên $h$, seed ngẫu nhiên $s$
+\If{$|X| = 1$}
+    \State Trả về $X$
+\EndIf
+\State Chọn pivot $u$ một cách ngẫu nhiên từ $X$
+\State $L = \{\text{các } v \in X \setminus \{u\} \text{ với } h(v,u) > 0.5\}$ (đặt trái)
+\State $R = \{\text{các } v \in X \setminus \{u\} \text{ với } h(v,u) \leq 0.5\}$ (đặt phải)
+\State QuickSort$(L, h, s_1)$ và QuickSort$(R, h, s_2)$ đệ quy
+\State Trả về: QuickSort$(L) + [u] + $ QuickSort$(R)$
+\end{algorithmic}
+
+\textbf{Định Lý 9.4 (Chặn Hiệu Năng cho QuickSort Ngẫu Nhiên)}
+
+Trong cài đặt nhị phân:
+
+\begin{equation}
+\mathbb{E}_{X,\sigma^*,s}[L(\mathcal{A}_{\text{QuickSort}}(X, s), \sigma^*)] = \mathbb{E}_{X,\sigma^*}[L(h, \sigma^*)]
+\end{equation}
+
+\begin{equation}
+\text{Reg}(\mathcal{A}_{\text{QuickSort}}) \leq \text{Reg}(h)
+\end{equation}
+
+\textbf{Lợi ích}:
+\begin{itemize}
+    \item Factor 2 biến mất! (so sánh với sort-by-degree)
+    \item Mất mát mong đợi bằng chính xác với mất mát của $h$
+    \item Độ phức tạp thời gian kỳ vọng: $O(n \log n)$, hoặc $O(n + k \log k)$ nếu chỉ cần top-$k$
+\end{itemize}
+
+\textbf{Phân Tích Độ Phức Tạp}:
+
+QuickSort ngẫu nhiên chuẩn có độ phức tạp kỳ vọng $O(n \log n)$ dựa trên đặc tính của phép so sánh bắc cầu chuẩn. Tuy nhiên, ở đây hàm ưu tiên $h$ có thể không bắc cầu. 
+
+Bằng cách phân tích chi tiết (xem Ailon và Mohri 2008), chúng ta chỉ ra rằng:
+\begin{itemize}
+    \item Mỗi phần tử được so sánh kỳ vọng $O(\log n)$ lần
+    \item Do đó, tổng số so sánh kỳ vọng vẫn là $O(n \log n)$
+    \item Độ phức tạp không bị ảnh hưởng bởi tính không bắc cầu
+\end{itemize}
+
+\subsubsection{Mở Rộng Đến Các Hàm Mất Mát Khác}
+
+[MỞ RỘNG] Tất cả các kết quả ở trên có thể mở rộng đến một lớp tổng quát các hàm mất mát được trọng số $L_\omega$:
+
+\begin{equation}
+L_\omega(\sigma, \sigma^*) = \frac{2}{n(n-1)}\sum_{u \neq v} \omega(\sigma^*(v), \sigma^*(u)) \mathbb{1}_{\sigma(u) < \sigma(v)} \mathbb{1}_{\sigma^*(v) < \sigma^*(u)}
+\end{equation}
+
+trong đó $\omega: \mathbb{N} \times \mathbb{N} \to \mathbb{R}^+$ là hàm trọng số thỏa:
+
+\begin{itemize}
+    \item \textbf{Tính đối xứng}: $\omega(i,j) = \omega(j,i)$
+    \item \textbf{Tính đơn điệu}: $\omega(i,j) \leq \omega(i,k)$ nếu $i < j < k$ hoặc $i > j > k$
+    \item \textbf{Bất đẳng thức tam giác}: $\omega(i,j) \leq \omega(i,k) + \omega(k,j)$
+\end{itemize}
+
+\textbf{Ví Dụ Các Hàm Trọng Số}:
+
+\begin{itemize}
+    \item $\omega(i,j) = 1$ với mọi $i \neq j$: đây là hàm mất mát chuẩn (unweighted)
+    \item $\omega(i,j) = \mathbb{1}_{(i \leq k) \vee (j \leq k)}$: nhấn mạnh lỗi ở top-$k$ (precision at $k$)
+    \item $\omega(i,j) = \frac{n(n-1)}{2m^+m^-}$: cho cài đặt nhị phân, tương ứng với $1 - \text{AUC}$
+\end{itemize}
+
+\vspace{0.5cm}
+
+
+% ============================================================
+
+\subsection{Thảo Luận}
+
+\subsubsection{Các Tiêu Chí Xếp Hạng Trong Thư Viện Thông Tin}
+
+Các tiêu chí được trình bày trước đây (AUC, pairwise ranking error) dựa trên sai lầm xếp hạng từng cặp. Tuy nhiên, trong các ứng dụng thực tế như search engine, information retrieval, các tiêu chí khác cũng rất quan trọng:
+
+\subsubsection{Precision, Recall, Average Precision}
+
+Giả sử dữ liệu chia thành hai lớp: điểm dương (relevant - liên quan) và điểm âm (irrelevant - không liên quan).
+
+\textbf{Precision}: Tỷ lệ các kết quả dự đoán là liên quan mà thực sự liên quan:
+\begin{equation}
+\text{Precision} = \frac{\#\text{liên quan được dự đoán đúng}}{\text{\#tất cả dự đoán là liên quan}}
+\end{equation}
+
+\textbf{Precision@n}: Chỉ xét top $n$ kết quả trả về:
+\begin{equation}
+\text{Precision@n} = \frac{\#\text{liên quan trong top-n}}{n}
+\end{equation}
+
+Ví dụ: Precision@5 = 4/5 = 0.8 nghĩa là trong 5 kết quả hàng đầu, 4 cái liên quan.
+
+\textbf{Recall}: Tỷ lệ các điểm liên quan bị bỏ qua:
+\begin{equation}
+\text{Recall} = \frac{\#\text{liên quan được dự đoán đúng}}{\text{\#tất cả điểm liên quan thực sự}}
+\end{equation}
+
+\textbf{Average Precision}: Tính Precision@n cho mỗi $n$ từ 1 đến số lượng điểm liên quan, rồi lấy trung bình:
+\begin{equation}
+\text{Average Precision} = \frac{1}{|D^+|} \sum_{n=1}^{|D^+|} \text{Precision@n}
+\end{equation}
+
+\textbf{Ưu/Nhược Điểm}:
+\begin{itemize}
+    \item \textbf{Ưu}: Dễ hiểu, trực tiếp phản ánh chất lượng kết quả top-$k$ mà người dùng quan tâm
+    \item \textbf{Nhược}: Không xem xét thứ tự của các kết quả không liên quan; nhạy cảm với kích thước tập dương
+\end{itemize}
+
+\subsubsection{DCG và NDCG}
+
+Trong một số bài toán, các điểm có nhiều cấp độ liên quan khác nhau (ví dụ: rất liên quan, trung bình liên quan, ít liên quan), không chỉ nhị phân.
+
+\textbf{Discounted Cumulative Gain (DCG)}: 
+
+Cho chuỗi hệ số chiết khấu không tăng $c_1 \geq c_2 \geq \cdots \geq 0$ (ví dụ: $c_i = \log_2(i+1)^{-1}$). Cho xếp hạng với điểm liên quan $r_i$ ở vị trí thứ $i$:
+
+\begin{equation}
+\text{DCG} = \sum_{i=1}^{m} c_i r_i
+\end{equation}
+
+Ý tưởng: các kết quả ở vị trí cao (nhỏ $i$) được trọng số cao hơn.
+
+\textbf{Normalized DCG (NDCG)}:
+
+Để so sánh giữa các xếp hạng khác nhau:
+\begin{equation}
+\text{NDCG} = \frac{\text{DCG}}{\text{IDCG}}
+\end{equation}
+
+trong đó IDCG (Ideal DCG) là DCG của xếp hạng hoàn hảo:
+\begin{equation}
+\text{IDCG} = \sum_{i=1}^{m} c_i r^*_i
+\end{equation}
+
+với $r^*_1 \geq r^*_2 \geq \cdots$ là các điểm sắp xếp giảm dần.
+
+NDCG luôn nằm trong $[0,1]$, dễ dàng so sánh giữa các bài toán khác nhau.
+
+\textbf{Ưu/Nhược Điểm}:
+\begin{itemize}
+    \item \textbf{Ưu}: Xem xét cấp độ liên quan; chiết khấu các kết quả ở vị trí thấp; dạng chuẩn hóa
+    \item \textbf{Nhược}: Tính toán phức tạp hơn; phụ thuộc chọn hệ số chiết khấu
+\end{itemize}
+
+\subsubsection{Mối Liên Hệ Giữa Các Tiêu Chí}
+
+[MỞ RỘNG] Các tiêu chí khác nhau nhấn mạnh các khía cạnh khác nhau của xếp hạng:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|c|c|c|}
+\hline
+\textbf{Tiêu Chí} & \textbf{Nhấn Mạnh} & \textbf{Ứng Dụng} \\
+\hline
+AUC & Tổng thể toàn bộ xếp hạng & Phân loại nhị phân cân bằng \\
+\hline
+Precision@k & Chất lượng top-$k$ & Search engine, khuyến nghị \\
+\hline
+Recall & Độ phủ của kết quả liên quan & Phát hiện gian lận \\
+\hline
+DCG/NDCG & Cấp độ liên quan + vị trí & Xếp hạng tài liệu \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection{Mối Liên Hệ Giữa Các Thiết Lập}
+
+\textbf{Score-based vs Preference-based}:
+\begin{itemize}
+    \item Score-based: Xây dựng một hàm số toàn cục, dễ diễn giải nhưng có thể không khả thi với dữ liệu không bắc cầu
+    \item Preference-based: Chỉ cần xếp hạng tập con, linh hoạt hơn nhưng phức tạp hơn khi có nhiều truy vấn khác nhau
+\end{itemize}
+
+\textbf{Phân loại vs Xếp Hạng}:
+\begin{itemize}
+    \item Phân loại: Quyết định nhị phân cho mỗi điểm độc lập
+    \item Xếp hạng: Quan hệ tương đối giữa các điểm
+    \item Có thể rút gọn ranking sang classification (bằng cách gắn ngưỡng $\theta$) nhưng mất thông tin
+\end{itemize}
+
+\subsubsection{Hướng Phát Triển Trong Tương Lai}
+
+\begin{itemize}
+    \item \textbf{Learning-to-Rank với Deep Learning}: Sử dụng neural networks sâu để học hàm xếp hạng phức tạp
+    \item \textbf{Online Ranking}: Cập nhật xếp hạng động khi có dữ liệu mới tới
+    \item \textbf{Contextual Ranking}: Xếp hạng phụ thuộc vào ngữ cảnh (context)
+    \item \textbf{Fair Ranking}: Đảm bảo tính công bằng trong kết quả xếp hạng
+    \item \textbf{Diversity in Ranking}: Đa dạng hóa kết quả để tránh lặp lại nội dung tương tự
+\end{itemize}
+
+\vspace{1cm}
