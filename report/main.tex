@@ -1,0 +1,108 @@
+\documentclass[12pt,a4paper]{article}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage[vietnamese]{babel}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{geometry}
+\geometry{left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue
+}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{caption}
+
+% --- Listings Style ---
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.96,0.96,0.96}
+
+\lstset{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+% --- Title Page ---
+\title{
+    \textbf{ĐỒ ÁN 2: MỘT SỐ CHỦ ĐỀ NỀN TẢNG TRONG HỌC MÁY}\\
+    \Large{Chương 9: BÀI TOÁN PHÂN HẠNG (RANKING)}
+}
+\author{
+    \textbf{Nhóm 5 Thành viên} \\
+    Môn học: Nhập môn Học máy (CSC14005) \\
+    Học kỳ 2 -- Lớp: 2025/2026
+}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\newpage
+\tableofcontents
+\newpage
+
+\section{Giới thiệu Chương sách (Chương 9: Ranking)}
+\textit{(Thành viên 1 thực hiện phần tóm tắt tổng quan bài toán phân hạng)}
+
+\section{Phần 1: Báo cáo lý thuyết}
+\subsection{9.1. The problem of ranking}
+\textit{(Thành viên 1 thực hiện)}
+
+\subsection{9.2. Generalization bound}
+\textit{(Thành viên 1 thực hiện)}
+
+\subsection{9.3. Ranking with SVMs}
+\textit{(Thành viên 1 thực hiện)}
+
+\subsection{9.4. RankBoost}
+\textit{(Thành viên 2 thực hiện)}
+
+\subsection{9.5. Bipartite ranking}
+\textit{(Thành viên 2 thực hiện)}
+
+\subsection{9.6. Preference-based setting}
+\textit{(Thành viên 3 thực hiện)}
+
+\subsection{9.7. Discussion}
+\textit{(Thành viên 3 thực hiện)}
+
+\newpage
+% --- Import Experimental Results (Member 4) ---
+\input{part2_experiments.tex}
+
+\newpage
+\section{Phần 3: Nghiên cứu tiên tiến liên quan}
+\textit{(Thành viên 5 thực hiện tổng hợp các bài báo khoa học sau năm 2021)}
+
+\newpage
+\section{Kết luận}
+\textit{(Cả nhóm tổng hợp đóng góp và hướng phát triển)}
+
+% --- Bibliography ---
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}
