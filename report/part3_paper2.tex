@@ -1,0 +1,149 @@
+
+
+\subsection{Phân tích bài báo: Which Tricks are Important for Learning to Rank?}
+\textbf{Thông tin nghiên cứu:} Bài báo của Ivan Lyzhin, Aleksei Ustimenko, Andrey Gulin, và Liudmila Prokhorenkova, công bố tại Hội nghị ICML 2023 (Proceedings of the 40th International Conference on Machine Learning).
+
+% ============================================================
+\subsubsection{Vấn đề}
+% ============================================================
+
+\begin{tcolorbox}\textbf{Câu hỏi nghiên cứu trung tâm:}\bfseries
+  \textit{Trong số các "thủ thuật" thiết kế thuật toán của các phương pháp học xếp hạng (Learning to Rank) dựa trên cây quyết định tăng cường (GBDT), đâu là những yếu tố thực sự quan trọng nhất? Cụ thể: tối ưu trực tiếp hàm mất mát xếp hạng (không lồi) hay xây dựng cận trên lồi (convex upper bound) của nó? Vai trò của làm mịn ngẫu nhiên (stochastic smoothing) và cách chọn các cặp tài liệu lân cận là gì?}
+\end{tcolorbox}
+\medskip
+
+Bài toán \textbf{Learning to Rank (LTR)} là một trong những bài toán trung tâm của truy xuất thông tin (information retrieval): cho trước một tập tài liệu và một truy vấn, mục tiêu là học một hàm cho điểm (scoring function) $f(x)$ để xếp hạng tài liệu theo mức độ liên quan. Nghiên cứu xuất phát từ hai điểm nghẽn thực tiễn chính:
+
+\begin{enumerate}
+  \item \textbf{Bài toán không khả vi (non-differentiable):} Hàm mất mát xếp hạng $L(\mathbf{z}, \mathbf{r})$ --- được xác định bởi phép sắp xếp $\mathbf{s} = \arg\!\sort(\mathbf{z})$ --- là hàm hằng cục bộ, không liên tục và không lồi theo vector điểm $\mathbf{z}$. Điều này khiến các phương pháp gradient chuẩn không thể áp dụng trực tiếp.
+  \item \textbf{Thiếu vắng sự so sánh chuẩn mực:} Các thuật toán GBDT-based LTR hiện đại (LambdaMART, YetiRank, StochasticRank) được đề xuất tại các thời điểm khác nhau và chưa bao giờ được so sánh trong một thiết lập thống nhất, công bằng, với phân tích kỹ lưỡng về tầm quan trọng của từng chi tiết thuật toán.
+\end{enumerate}
+
+% ============================================================
+\subsubsection{Đóng góp chính}
+% ============================================================
+Bài báo mang lại 3 đóng góp chính:
+\begin{enumerate}
+  \item \textbf{Phân tích lý thuyết thống nhất:} Đặt LambdaMART, YetiRank và StochasticRank trong cùng một khung toán học, giải thích bản chất của từng thuật toán và sự khác biệt cốt lõi giữa chúng.
+  \item \textbf{Thuật toán YetiLoss:} Đề xuất một cải tiến đơn giản cho YetiRank, cho phép tối ưu hóa \emph{bất kỳ} hàm chất lượng xếp hạng nào (không chỉ ExpDCG như YetiRank gốc). Thuật toán này đạt kết quả state-of-the-art mới cho các độ đo MRR và MAP.
+  \item \textbf{Nghiên cứu thực nghiệm toàn diện:} Đánh giá trên 6 bộ dữ liệu LTR chuẩn, 4 hàm chất lượng (NDCG@10, MRR, MAP, ERR), định lượng tầm quan trọng của hai yếu tố kỹ thuật cụ thể: \emph{làm mịn ngẫu nhiên} và \emph{số lượng cặp lân cận}.
+\end{enumerate}
+
+% ============================================================
+\subsubsection{Thiết lập và Hàm chất lượng xếp hạng}
+% ============================================================
+
+\paragraph{Bài toán LTR theo định nghĩa score-based}
+Cho một truy vấn $q$ với tập tài liệu $\{x_1, \ldots, x_{n_q}\}$ và vector nhãn liên quan $\mathbf{r} = (r_1, \ldots, r_{n_q})$, mô hình LTR học một hàm $f(x)$ để tính điểm $z_i = f(x_i)$ cho từng tài liệu. Thứ hạng dự đoán là $\mathbf{s} = \arg\!\sort(\mathbf{z})$. Mục tiêu là tối thiểu hóa hàm mất mát thực nghiệm:
+\[
+  L_N(f) := \frac{1}{N} \sum_{i=1}^{N} L(f, q_i)
+\]
+
+\begin{lienhe_ly_thuyet}
+  \textbf{Liên hệ với Chương 9 [FML] --- Cài đặt Score-based Ranking:} \\
+  Định nghĩa bài toán này ánh xạ trực tiếp vào \textbf{Mục 9.1} của giáo trình, nơi bài toán xếp hạng trong cài đặt score-based được xây dựng chính thức. Hàm cho điểm $h: \mathcal{X} \to \mathbb{R}$ (ký hiệu $f$ trong bài báo) xác định một thứ tự tuyến tính trên tập tài liệu. Giáo trình nhấn mạnh rằng dù hàm ưu tiên (preference function) thực tế có thể \emph{không chuyển vị} (non-transitive), thứ hạng do $f$ tạo ra luôn chuyển vị --- đây chính là hạn chế cơ bản của cài đặt score-based mà bài báo kế thừa và khai thác trong thiết kế hàm surrogate.
+\end{lienhe_ly_thuyet}
+
+\paragraph{Các hàm chất lượng xếp hạng}
+Bài báo xem xét bốn hàm chất lượng phổ biến, chúng thể hiện các khía cạnh khác nhau của chất lượng xếp hạng:
+
+\begin{itemize}
+  \item \textbf{NDCG@k} (Normalized Discounted Cumulative Gain): Đo lường chất lượng xếp hạng có trọng số theo vị trí, phổ biến nhất trong nghiên cứu LTR. Phần tử ở vị trí cao hơn nhận mức chiết khấu lớn hơn theo hàm logarit.
+  \item \textbf{MRR} (Mean Reciprocal Rank): Đo lường nghịch đảo vị trí của tài liệu liên quan đầu tiên, thường dùng trong hệ thống tìm kiếm click-based.
+  \item \textbf{MAP} (Mean Average Precision): Trung bình độ chính xác (AP) tại mọi ngưỡng, phù hợp với nhãn nhị phân.
+  \item \textbf{ERR} (Expected Reciprocal Rank): Mở rộng MRR cho nhãn nhiều mức độ liên quan.
+\end{itemize}
+
+\begin{lienhe_ly_thuyet}
+  \textbf{Liên hệ với Chương 9 [FML] --- Tiêu chí DCG, NDCG và AUC:} \\
+  \textbf{Mục 9.7} của giáo trình giới thiệu DCG và NDCG như những tiêu chí xếp hạng quan trọng trong thực tế, bên cạnh precision@k, average precision và AUC (được phân tích kỹ ở Mục 9.5.2). Bài báo đi xa hơn giáo trình ở chỗ không chỉ định nghĩa các hàm này mà còn đề xuất cách tích hợp chúng trực tiếp vào quá trình tối ưu của thuật toán GBDT, thay vì chỉ dùng để đánh giá kết quả.
+\end{lienhe_ly_thuyet}
+
+% ============================================================
+\subsubsection{Ba trường phái thuật toán LTR}
+% ============================================================
+Điểm mấu chốt của bài báo là so sánh ba triết lý thiết kế thuật toán khác nhau để giải quyết vấn đề không khả vi của $L_N(f)$.
+
+\paragraph{Trường phái 1 --- LambdaMART: Cận trên lồi với tất cả các cặp}
+LambdaMART (Wu et al., 2010) xây dựng cận trên lồi, khả vi cho hàm mất mát tại mỗi bước lặp thông qua kỹ thuật Majorization-Minimization. Cận trên được xây dựng theo hai bước:
+\begin{enumerate}
+  \item Đặt cận cho số cặp đảo thứ tự: $L(\mathbf{z}, \mathbf{r}) \leq \text{const} + \sum_{i,j} w_{ij} \cdot \mathbf{1}_{z_j - z_i > 0}$, trong đó trọng số $w_{ij}$ đo mức độ ảnh hưởng của việc hoán vị cặp tài liệu $(i, j)$ đến hàm mất mát.
+  \item Thay thế hàm chỉ thị bằng cận trên lồi, khả vi: hàm log-sigmoid $\log_2(1 + e^{-(z_i - z_j)})$.
+\end{enumerate}
+\textbf{Đặc điểm:} LambdaMART sử dụng \emph{tất cả} các cặp tài liệu $(i, j)$ với $r_i > r_j$, bao gồm cả những cặp cách xa nhau trong danh sách. Trọng số $w_{ij}$ là hàm \emph{gián đoạn} (discontinuous) của điểm số $\mathbf{z}$, dẫn đến gradient có thể thay đổi đột ngột khi mô hình thay đổi nhỏ.
+
+\paragraph{Trường phái 2 --- YetiRank / YetiLoss: Cận trên lồi với làm mịn ngẫu nhiên}
+YetiRank (Gulin et al., 2011) là thuật toán đã thắng cuộc thi LTR của Yahoo! (2010) nhưng ít được nghiên cứu sau đó. Khác biệt cốt lõi của YetiRank so với LambdaMART nằm ở hai điểm:
+\begin{enumerate}
+  \item \textbf{Làm mịn ngẫu nhiên (Stochastic Smoothing):} Thay vì dùng thứ hạng thực tế từ $\mathbf{z}$, YetiRank thêm nhiễu ngẫu nhiên (phân phối Logistic) vào điểm số để sinh ra nhiều hoán vị ngẫu nhiên. Trọng số $w_{ij}^{YL}$ là kỳ vọng trên các hoán vị này, tạo thành hàm \emph{trơn} (smooth) của $\mathbf{z}$.
+  \item \textbf{Chỉ dùng cặp lân cận:} YetiRank chỉ xét những cặp tài liệu \emph{kề nhau} trong danh sách xếp hạng ($|p_i - p_j| = 1$), thay vì tất cả các cặp.
+\end{enumerate}
+
+Bài báo chứng minh rằng YetiRank \emph{ngầm định} (implicitly) tối ưu hóa hàm chất lượng \textbf{ExpDCG} --- một biến thể của DCG với chiết khấu hàm mũ thay vì logarit. Từ nhận xét này, tác giả đề xuất \textbf{YetiLoss}: thay thế $\Delta_{ij}\text{ExpDCG}$ bằng $\Delta_{ij}M$ của \emph{bất kỳ} hàm chất lượng $M$ mong muốn (NDCG, MRR, MAP, ERR).
+
+\paragraph{Trường phái 3 --- StochasticRank: Tối ưu trực tiếp hàm không lồi}
+StochasticRank (Ustimenko \& Prokhorenkova, 2020) không xây dựng cận trên mà làm mịn trực tiếp $L(\mathbf{z}, \mathbf{r})$ bằng phân phối Gauss, thu được hàm mục tiêu $l(\mathbf{z}, \mathbf{r}, \sigma)$ là hàm mất mát gốc được lấy kỳ vọng dưới nhiễu Gaussian. Hàm này không lồi, do đó được tối ưu bằng Stochastic Gradient Langevin Boosting (SGLB) --- một phương pháp có đảm bảo lý thuyết hội tụ về cực tiểu toàn cục.
+
+\begin{nhan_xet_box}
+  \textbf{Điểm tương đồng sâu giữa YetiLoss và StochasticRank:} \\
+  Bài báo chứng minh một kết quả thú vị: mặc dù hai thuật toán xuất phát từ triết lý khác nhau (cận trên lồi \emph{vs.} tối ưu trực tiếp), cả YetiLoss và StochasticRank đều \emph{chỉ} sử dụng thông tin từ các hoán vị của những tài liệu \emph{kề nhau} trong danh sách. Điều này đối lập hoàn toàn với LambdaMART, vốn sử dụng tất cả các cặp. Nhận xét này cho thấy: \textbf{chỉ các hoán vị lân cận mới là những thay đổi ``thực tế'' có thể đạt được bằng các bước gradient nhỏ}, và cận trên từ YetiLoss do đó chứa thông tin cục bộ chuẩn xác hơn về hàm mất mát gốc.
+\end{nhan_xet_box}
+
+\begin{lienhe_ly_thuyet}
+  \textbf{Liên hệ với Chương 9 [FML] --- Kỹ thuật Surrogate Loss:} \\
+  Giáo trình (Mục 9.4.2) phân tích RankBoost như một thuật toán tối thiểu hóa hàm surrogate lồi (exponential loss) của hàm pairwise misranking rời rạc thông qua coordinate descent. Bài báo mở rộng tư tưởng này sang bộ ba LambdaMART / YetiLoss / StochasticRank, nhưng đặt câu hỏi quan trọng hơn: \emph{chất lượng} của hàm surrogate quan trọng hơn hay \emph{tính lồi} của nó? Kết quả thực nghiệm cho thấy cận trên lồi được xây dựng cẩn thận (YetiLoss) thường vượt trội so với tối ưu trực tiếp hàm không lồi (StochasticRank).
+\end{lienhe_ly_thuyet}
+
+% ============================================================
+\subsubsection{Thực nghiệm kiểm chứng}
+% ============================================================
+
+\paragraph{Thiết lập}
+Nhóm tác giả thực hiện so sánh toàn diện trên \textbf{6 bộ dữ liệu} LTR chuẩn (Web10K, Web30K, Yahoo S1, Yahoo S2, Istella, Istella-S) với quy mô lên đến hàng triệu tài liệu. Tất cả thuật toán được triển khai trong thư viện CatBoost để đảm bảo so sánh công bằng, với tối ưu siêu tham số bằng kết hợp random search và Bayesian optimization (100 iterations).
+
+\paragraph{Kết quả so sánh chính (Bảng 2)}
+Một số quan sát nổi bật từ thực nghiệm:
+\begin{enumerate}
+  \item \textbf{YetiRank là SOTA cho NDCG@10:} YetiRank đánh bại cả LightGBM, LambdaMART và StochasticRank trên phần lớn bộ dữ liệu. Điều này xác nhận tầm quan trọng của làm mịn ngẫu nhiên, ngay cả khi không tối ưu hóa đúng NDCG.
+  \item \textbf{YetiLoss đạt SOTA mới cho MAP:} YetiLoss vượt trội tất cả đối thủ trên \emph{mọi} bộ dữ liệu cho MAP, với biên độ đáng kể. Ví dụ, trên Istella-S: YetiLoss đạt 91.07 so với 90.28 của LambdaMART và 89.09 của YetiRank.
+  \item \textbf{Tính lồi thường có lợi:} So sánh YetiLoss (cận trên lồi) với StochasticRank (tối ưu trực tiếp), YetiLoss thắng trong phần lớn trường hợp, cho thấy cận trên được xây dựng tốt có thể tốt hơn tối ưu trực tiếp không lồi.
+  \item \textbf{QueryRMSE là baseline mạnh bất ngờ:} Phương pháp đơn giản QueryRMSE (tối ưu RMSE bình thường, không quan tâm đến xếp hạng) cho kết quả cạnh tranh đáng ngạc nhiên, nhấn mạnh tầm quan trọng của việc so sánh với baselines đơn giản.
+\end{enumerate}
+
+\paragraph{Tầm quan trọng của làm mịn ngẫu nhiên (Bảng 3)}
+Thực nghiệm loại bỏ làm mịn khỏi YetiLoss cho thấy hiệu năng giảm mạnh trên tất cả bộ dữ liệu và độ đo. Ví dụ, trên Web10K với NDCG@10: từ 50.76 (Logistic smoothing) xuống còn 48.49 (không làm mịn). Đây là bằng chứng thực nghiệm mạnh mẽ rằng \textbf{làm mịn ngẫu nhiên là yếu tố quan trọng nhất}, còn \emph{loại} phân phối (Logistic hay Gaussian) không ảnh hưởng đáng kể.
+
+\paragraph{Phân tích số lượng cặp lân cận (Hình 1)}
+YetiLoss chỉ xét cặp với $|p_i - p_j| = 1$ (cặp ngay kề nhau). Thực nghiệm mở rộng ra $k = 2, 3$ lân cận cho thấy không có xu hướng rõ ràng và nhất quán --- giá trị $k = 2$ là lựa chọn tốt và hiệu quả về mặt tính toán.
+
+% ============================================================
+\subsubsection{Đánh giá phê bình và câu hỏi mở}
+% ============================================================
+\paragraph{Điểm mạnh}
+\begin{enumerate}
+  \item \textbf{Tính thống nhất và công bằng:} Tất cả thuật toán được so sánh trong cùng một framework (CatBoost), loại bỏ các biến nhiễu từ triển khai khác nhau. Đây là điểm mà các nghiên cứu trước còn thiếu.
+  \item \textbf{Kết quả YetiLoss cho MAP:} Đây là đóng góp thực sự, vì MAP là độ đo được sử dụng rộng rãi trong thực tế nhưng thường bị bỏ qua trong nghiên cứu LTR. Mức độ cải thiện đáng kể và nhất quán trên mọi dataset.
+  \item \textbf{Phân tích ablation cẩn thận:} Bài báo không chỉ so sánh thuật toán tổng thể mà còn cô lập từng yếu tố kỹ thuật (smoothing, number of neighbors), cung cấp hiểu biết sâu hơn cho người thực hành.
+\end{enumerate}
+
+\paragraph{Hạn chế}
+\begin{enumerate}
+  \item \textbf{Giới hạn trong GBDT:} Toàn bộ phân tích chỉ áp dụng cho mô hình GBDT trên dữ liệu bảng (tabular). Các kết luận có thể không chuyển giao sang mô hình neural ranker hay các bài toán LTR khác (image retrieval, recommendation systems).
+  \item \textbf{Chi phí tính toán:} YetiRankPairwise --- biến thể GBDT-specific của YetiRank được bỏ qua trong nghiên cứu vì quá chậm, cho thấy cải thiện thực sự về tốc độ vẫn còn là thách thức.
+  \item \textbf{StochasticRank không hỗ trợ MAP:} Do cách xây dựng ước lượng gradient, việc mở rộng StochasticRank cho MAP đòi hỏi công trình riêng biệt, khiến so sánh cho MAP không được đầy đủ.
+\end{enumerate}
+
+\begin{tcolorbox}\textbf{Hướng phát triển và Câu hỏi mở:}\bfseries
+  \begin{enumerate}
+    \item \textit{YetiLoss cho Neural Ranker?} Cả ba kỹ thuật (YetiLoss, QueryRMSE, StochasticRank) đều có thể áp dụng thẳng vào mạng nơ-ron. Liệu kết luận ``làm mịn ngẫu nhiên là quan trọng nhất'' có còn giữ nguyên trong bối cảnh neural ranker không?
+    \item \textit{Tích hợp với Preference-based Ranking?} Trong cài đặt học dựa trên sở thích (Mục 9.6 của giáo trình), hàm ưu tiên không cần chuyển vị. Liệu có thể xây dựng một surrogate loss kiểu YetiLoss cho bài toán này, nơi không có thứ hạng tuyến tính tường minh?
+    \item \textit{Khả năng tổng quát hóa (Generalization):} Bài báo chỉ phân tích qua gap train-test. Liệu các đảm bảo Rademacher complexity từ Định lý 9.1 [FML] có thể áp dụng để lý giải tại sao YetiLoss tổng quát hóa tốt hơn LambdaMART không? (Do hàm mục tiêu trơn hơn.)
+  \end{enumerate}
+\end{tcolorbox}
+
+% ============================================================
+\subsubsection{Tóm tắt}
+% ============================================================
+Bài báo trả lời câu hỏi nghiên cứu trung tâm bằng một kết luận rõ ràng và có cơ sở thực nghiệm vững chắc: \textbf{làm mịn ngẫu nhiên (stochastic smoothing) là yếu tố quan trọng nhất}, không phải lựa chọn phân phối làm mịn hay số lượng cặp lân cận. Kết luận thứ hai, có phần bất ngờ, là \textbf{tính lồi của bài toán tối ưu thường có lợi hơn} so với tối ưu trực tiếp hàm không lồi, miễn là cận trên lồi được xây dựng cẩn thận (như YetiLoss). Điều này ngược lại với trực giác ban đầu rằng tối ưu trực tiếp mục tiêu thực luôn tốt hơn.
+
+YetiLoss --- một cải tiến đơn giản của YetiRank --- trở thành thuật toán SOTA mới cho MAP và MRR, đồng thời là state-of-the-art cho NDCG@10 khi kết hợp với YetiRank. Kết quả này đặc biệt có giá trị thực tiễn vì MAP và MRR là các độ đo quan trọng trong sản xuất (search engines, fraud detection) nhưng thường bị bỏ qua trong nghiên cứu học thuật.
