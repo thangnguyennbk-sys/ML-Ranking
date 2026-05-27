@@ -1,0 +1,408 @@
+% ── Chương 5: RankBoost ──────────────────────────────────────────────────────
+\subsection{RankBoost}
+\label{sec:rankboost}
+
+RankBoost \citep{freund2003efficient} là một thuật toán boosting cho ranking,
+tương tự AdaBoost cho phân loại nhị phân. Ý tưởng cơ bản: kết hợp nhiều
+\textit{base ranker} yếu thành một ranker mạnh bằng cách tối ưu hóa trọng số phân phối cặp dữ liệu một cách thích ứng.
+
+\subsubsection{Định nghĩa các đại lượng và Ký hiệu học thuật}
+
+Đặt $\Hcal$ là tập các \textit{base rankers} -- các hàm từ $\Xcal$ vào $\{0, 1\}$ (hoặc tổng quát hơn, vào $[0, 1]$ hay $\R$).
+
+Để mô tả trọng số của phân phối cặp dữ liệu $D_t$ trên tập mẫu huấn luyện, với mỗi vòng $t$ và mỗi trạng thái $s \in \{-1, 0, +1\}$, giáo trình gốc \citep{mohri2018foundations} định nghĩa các biến trọng số tích lũy $\epsilon^s_t$ như sau:
+\begin{equation}
+    \epsilon^s_t = \sum_{i=1}^m D_t(i) \mathbf{1}_{y_i(h_t(x'_i) - h_t(x_i)) = s}
+    = \E_{i \sim D_t}\bigl[\mathbf{1}_{y_i(h_t(x'_i) - h_t(x_i)) = s}\bigr].
+    \label{eq:epsilon_def}
+\end{equation}
+Chúng tôi ký hiệu rút gọn $\epsilon^+_t \equiv \epsilon^{+1}_t$ (tỷ lệ trọng số xếp đúng), $\epsilon^-_t \equiv \epsilon^{-1}_t$ (tỷ lệ trọng số xếp sai), và $\epsilon^0_t \equiv \epsilon^0_t$ (tỷ lệ trọng số không phân biệt được). Hiển nhiên ta luôn có: $\epsilon^+_t + \epsilon^-_t + \epsilon^0_t = 1$.
+
+Để tránh sự lẫn lộn học thuật, chúng tôi tuân thủ nghiêm ngặt ký hiệu của giáo trình Mohri:
+\begin{itemize}
+    \item Các ký hiệu $\epsilon^+_t, \epsilon^-_t, \epsilon^0_t$ đại diện cho trọng số phân phối biên của các cặp dữ liệu.
+    \item Ký hiệu $\gamma_t$ được dành riêng để định nghĩa \textbf{edge} (độ lợi hay biên danh nghĩa) của base ranker $h_t$ tại vòng $t$:
+    \begin{equation}
+        \gamma_t = \frac{\epsilon^+_t - \epsilon^-_t}{2}.
+        \label{eq:edge_def}
+    \end{equation}
+\end{itemize}
+
+\subsubsection{Pseudocode RankBoost}
+
+Luồng hoạt động thích ứng của RankBoost được trực quan hóa qua sơ đồ khối dưới đây:
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=1.1cm and 1.5cm,
+        box/.style={draw, rectangle, rounded corners, fill=blue!5, minimum width=3cm, minimum height=0.8cm, align=center, font=\small},
+        proc/.style={draw, rectangle, fill=orange!5, minimum width=3.5cm, minimum height=0.8cm, align=center, font=\small},
+        decision/.style={draw, diamond, aspect=2, fill=yellow!5, minimum width=2.5cm, align=center, inner sep=0pt, font=\small},
+        arrow/.style={-latex, thick}
+    ]
+        \node[box] (start) {\textbf{Khởi tạo} \\ $D_1(i) = 1/m$};
+        \node[proc, below=of start] (weak) {\textbf{Vòng $t$: Chọn $h_t$} \\ cực tiểu hoá $\epsilon^-_t - \epsilon^+_t$};
+        \node[proc, below=of weak] (alpha) {\textbf{Tính trọng số $\alpha_t$} \\ $\alpha_t = \frac{1}{2}\log(\epsilon^+_t / \epsilon^-_t)$};
+        \node[proc, below=of alpha] (dist) {\textbf{Cập nhật phân phối $D_{t+1}$} \\ Nhân $e^{-\alpha_t y_i \Delta h_t}$ và chuẩn hoá};
+        \node[decision, below=of dist] (loop) {Đạt $T$ vòng?};
+        \node[box, right=of loop] (end) {\textbf{Kết quả} \\ $f = \sum_{t=1}^T \alpha_t h_t$};
+        
+        \draw[arrow] (start) -- (weak);
+        \draw[arrow] (weak) -- (alpha);
+        \draw[arrow] (alpha) -- (dist);
+        \draw[arrow] (dist) -- (loop);
+        \draw[arrow] (loop) -- node[above, font=\small] {Có} (end);
+        \draw[arrow] (loop.west) -- ++(-1.2,0) |- node[left, pos=0.25, font=\small] {Chưa} (weak.west);
+    \end{tikzpicture}
+    \caption{Sơ đồ hoạt động của thuật toán RankBoost. Trọng số của phân phối $D_t$ tự động tập trung vào các cặp bị xếp hạng sai qua từng vòng lặp.}
+    \label{fig:rankboost_flowchart}
+\end{figure}
+
+Chi tiết các bước thực thi được trình bày cụ thể trong Thuật toán~\ref{alg:rankboost}.
+
+\begin{algorithm}[H]
+\caption{RankBoost}
+\label{alg:rankboost}
+\begin{algorithmic}[1]
+\REQUIRE Mẫu huấn luyện $S = \{(x_i, x'_i, y_i)\}_{i=1}^m$ với $y_i \in \{-1, +1\}$
+\STATE Khởi tạo $D_1(i) = 1/m$ với mọi $i \in [m]$
+\FOR{$t = 1$ to $T$}
+    \STATE Chọn base ranker $h_t \leftarrow \displaystyle\arg\min_{h \in \Hcal} \left( \epsilon^-_t(h) - \epsilon^+_t(h) \right) \equiv \displaystyle\arg\min_{h \in \Hcal} \E_{i \sim D_t}\bigl[\mathbf{1}_{y_i(h(x'_i)-h(x_i)) = -1} - \mathbf{1}_{y_i(h(x'_i)-h(x_i)) = +1}\bigr]$
+    \STATE Tính hệ số tin cậy: $\alpha_t \leftarrow \frac{1}{2}\log\dfrac{\epsilon^+_t}{\epsilon^-_t}$
+    \STATE Tính hằng số chuẩn hoá: $Z_t \leftarrow \epsilon^0_t + 2\sqrt{\epsilon^+_t \epsilon^-_t}$
+    \STATE Cập nhật phân phối cặp: $D_{t+1}(i) \leftarrow \dfrac{D_t(i) \exp\bigl(-\alpha_t y_i(h_t(x'_i)-h_t(x_i))\bigr)}{Z_t}$
+\ENDFOR
+\RETURN Bộ phân hạng ensemble mạnh: $f = \sum_{t=1}^T \alpha_t h_t$
+\end{algorithmic}
+\end{algorithm}
+
+\subsubsection{Trực giác hoạt động của thuật toán}
+
+\begin{itemize}
+    \item \textbf{Bước 3} lựa chọn base ranker yếu $h_t$ tốt nhất theo phân phối hiện tại $D_t$, tương đương việc tìm kiếm ranker tối đa hóa edge $\gamma_t$ (hiệu giữa tỷ lệ đúng và tỷ lệ sai).
+    \item \textbf{Bước 4}: hệ số tin cậy $\alpha_t > 0$ khi $\epsilon^+_t > \epsilon^-_t$ (đảm bảo giả thiết \textit{weak ranking} tốt hơn ngẫu nhiên). Mô hình yếu càng chính xác thì trọng số đóng góp của nó vào ensemble càng lớn.
+    \item \textbf{Bước 5}: $Z_t$ đóng vai trò chuẩn hoá để phân phối $D_{t+1}$ luôn là một phân phối xác suất hợp lệ (tổng bằng 1).
+    \item \textbf{Bước 6}: tăng trọng số của những cặp preference bị xếp hạng \textit{sai} (nhân với hệ số $e^{\alpha_t} > 1$) và giảm trọng số các cặp xếp \textit{đúng} (nhân với $e^{-\alpha_t} < 1$). Nhờ đó, vòng lặp kế tiếp buộc thuật toán phải tập trung học các cặp dữ liệu ``khó''.
+\end{itemize}
+
+\subsubsection{Đẳng thức toán học nền tảng}
+
+Phân phối thích ứng $D_{t+1}$ tại vòng $t$ có thể biểu diễn tường minh qua bộ phân hạng tích lũy $f_t = \sum_{s=1}^t \alpha_s h_s$ và các tích hệ số chuẩn hóa:
+\begin{equation}
+    D_{t+1}(i) = \frac{\exp\bigl(-y_i(f_t(x'_i) - f_t(x_i))\bigr)}{m \prod_{s=1}^t Z_s}.
+    \label{eq:D_t1_identity}
+\end{equation}
+
+\begin{proof}
+Chứng minh bằng phương pháp quy nạp toán học.
+\begin{itemize}
+    \item Với $t = 0$: $D_1(i) = 1/m = e^0/(m \cdot 1)$ (thỏa mãn đẳng thức).
+    \item Giả sử đẳng thức đúng cho vòng $t-1$:
+    \[
+        D_t(i) = \frac{e^{-y_i(f_{t-1}(x'_i) - f_{t-1}(x_i))}}{m \prod_{s=1}^{t-1} Z_s}.
+    \]
+    \item Xét bước quy nạp tại vòng $t$, thế công thức cập nhật phân phối ở Bước 6:
+    \begin{align*}
+        D_{t+1}(i)
+        &= \frac{D_t(i) \exp(-\alpha_t y_i(h_t(x'_i) - h_t(x_i)))}{Z_t} \\
+        &= \frac{e^{-y_i(f_{t-1}(x'_i) - f_{t-1}(x_i))}}{m \prod_{s=1}^{t-1} Z_s} \cdot \frac{e^{-\alpha_t y_i(h_t(x'_i) - h_t(x_i))}}{Z_t} \\
+        &= \frac{\exp\bigl(-y_i \left[ \sum_{s=1}^{t-1} \alpha_s (h_s(x'_i) - h_s(x_i)) + \alpha_t (h_t(x'_i) - h_t(x_i)) \right]\bigr)}{m \prod_{s=1}^t Z_s} \\
+        &= \frac{\exp\bigl(-y_i(f_t(x'_i) - f_t(x_i))\bigr)}{m \prod_{s=1}^t Z_s}.
+    \end{align*}
+\end{itemize}
+Đẳng thức được chứng minh hoàn chỉnh.
+\end{proof}
+
+\subsubsection{Cận trên sai số thực nghiệm (Empirical Error Bound)}
+
+Định lý dưới đây chỉ ra rằng sai số thực nghiệm của RankBoost được đảm bảo giảm nhanh chóng theo hàm mũ khi tăng số vòng boosting.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[scale=0.85]
+        \draw[->] (-3.5,0) -- (3.5,0) node[right, font=\small] {$u = y_i(f(x'_i) - f(x_i))$};
+        \draw[->] (0,-0.5) -- (0,4.2) node[above, font=\small] {$L(u)$};
+        
+        \draw[blue, ultra thick] (-3.5,1) -- (0,1);
+        \draw[blue, ultra thick] (0,0) -- (3.5,0);
+        \draw[blue, fill=white] (0,1) circle (2pt);
+        \draw[blue, fill=blue] (0,0) circle (2pt);
+        \node[blue, right, font=\small] at (1.5,0.4) {Zero-One Loss $\mathbf{1}_{u \leq 0}$};
+        
+        \draw[red, very thick, smooth, samples=100, domain=-1.4:3.2] plot (\x, {exp(-\x)});
+        \node[red, above right, font=\small] at (-1.5,3.2) {Exponential Loss $e^{-u}$};
+        
+        \draw[dashed, gray!50] (-3,-0.5) grid (3,4);
+    \end{tikzpicture}
+    \caption{So sánh Zero-One Loss và Exponential Loss (minh họa toán học cho Định lý~\ref{thm:rankboost_error}). Hàm mũ $e^{-u}$ hoạt động như một cận trên lồi chặt (convex upper bound) cho hàm chỉ thị $\mathbf{1}_{u \leq 0}$, giúp tối ưu hóa bằng phương pháp gradient lồi thuận lợi hơn.}
+    \label{fig:loss_comparison}
+\end{figure}
+
+\begin{theorem}{Empirical Error Bound for RankBoost (Theorem 10.3)}{rankboost_error}
+Empirical error của bộ phân hạng mạnh $f$ tạo bởi RankBoost thỏa mãn hệ thức:
+\begin{equation}
+    \RS(f) \leq \exp\Biggl(-2 \sum_{t=1}^T \biggl(\frac{\epsilon^+_t - \epsilon^-_t}{2}\biggr)^2\Biggr) = \exp\Biggl(-2 \sum_{t=1}^T \gamma_t^2\Biggr).
+    \label{eq:rankboost_bound}
+\end{equation}
+Hơn thế nữa, nếu thỏa mãn giả thiết \textbf{Weak Ranking Assumption}: tồn tại biên tối thiểu $\gamma > 0$ sao cho với mọi $t \in [T]$, $\gamma_t = \frac{\epsilon^+_t - \epsilon^-_t}{2} \geq \gamma$, thì sai số giảm theo hàm mũ:
+\begin{equation}
+    \RS(f) \leq \exp(-2\gamma^2 T).
+    \label{eq:rankboost_exp_bound}
+\end{equation}
+\end{theorem}
+
+\begin{proof}[Chứng minh chi tiết]
+\textbf{Bước 1: Sử dụng bất đẳng thức lồi chặn trên $\mathbf{1}_{u \leq 0} \leq e^{-u}$ (xem Hình~\ref{fig:loss_comparison}).}
+
+Đặt biến lề cặp $u_i = y_i(f(x'_i) - f(x_i))$. Sai số phân hạng thực nghiệm được định nghĩa:
+\begin{align*}
+    \RS(f) &= \frac{1}{m} \sum_{i=1}^m \mathbf{1}_{y_i(f(x'_i) - f(x_i)) \leq 0} \\
+    &\leq \frac{1}{m} \sum_{i=1}^m \exp\bigl(-y_i(f(x'_i) - f(x_i))\bigr) \\
+    &\stackrel{\eqref{eq:D_t1_identity}}{=} \frac{1}{m} \sum_{i=1}^m \left( m \cdot D_{T+1}(i) \prod_{t=1}^T Z_t \right) \\
+    &= \left( \prod_{t=1}^T Z_t \right) \cdot \underbrace{\sum_{i=1}^m D_{T+1}(i)}_{=1} = \prod_{t=1}^T Z_t.
+\end{align*}
+
+\textbf{Bước 2: Phân tích và tính hằng số chuẩn hoá $Z_t$.}
+
+Theo định nghĩa của $Z_t$:
+\begin{align*}
+    Z_t &= \sum_{i=1}^m D_t(i) \exp\bigl(-\alpha_t y_i(h_t(x'_i) - h_t(x_i))\bigr) \\
+    &= \epsilon^+_t e^{-\alpha_t} + \epsilon^-_t e^{\alpha_t} + \epsilon^0_t.
+\end{align*}
+Thế hệ số tin cậy tối ưu $\alpha_t = \frac{1}{2}\log(\epsilon^+_t/\epsilon^-_t)$, ta có:
+\begin{align*}
+    Z_t &= \epsilon^+_t \sqrt{\frac{\epsilon^-_t}{\epsilon^+_t}} + \epsilon^-_t \sqrt{\frac{\epsilon^+_t}{\epsilon^-_t}} + \epsilon^0_t \\
+    &= 2\sqrt{\epsilon^+_t \epsilon^-_t} + \epsilon^0_t.
+\end{align*}
+
+\textbf{Bước 3: Tìm cận trên cho hệ số chuẩn hoá $Z_t$.}
+
+Vì $\epsilon^+_t + \epsilon^-_t + \epsilon^0_t = 1$, ta biến đổi số hạng dưới dấu căn:
+\[
+    4\epsilon^+_t \epsilon^-_t = (\epsilon^+_t + \epsilon^-_t)^2 - (\epsilon^+_t - \epsilon^-_t)^2
+    = (1 - \epsilon^0_t)^2 - (\epsilon^+_t - \epsilon^-_t)^2.
+\]
+Thay vào biểu thức $Z_t$:
+\begin{align*}
+    Z_t &= \sqrt{(1 - \epsilon^0_t)^2 - (\epsilon^+_t - \epsilon^-_t)^2} + \epsilon^0_t \\
+    &= (1 - \epsilon^0_t)\sqrt{1 - \frac{(\epsilon^+_t - \epsilon^-_t)^2}{(1 - \epsilon^0_t)^2}} + \epsilon^0_t \\
+    &\stackrel{(*)}{\leq} (1 - \epsilon^0_t)\biggl(1 - \frac{(\epsilon^+_t - \epsilon^-_t)^2}{2(1 - \epsilon^0_t)^2}\biggr) + \epsilon^0_t \\
+    &= 1 - \frac{(\epsilon^+_t - \epsilon^-_t)^2}{2(1 - \epsilon^0_t)} \\
+    &\stackrel{(**)}{\leq} \exp\biggl(-\frac{(\epsilon^+_t - \epsilon^-_t)^2}{2(1 - \epsilon^0_t)}\biggr) \\
+    &\leq \exp\biggl(-\frac{(\epsilon^+_t - \epsilon^-_t)^2}{2}\biggr) \quad (\text{do } 1 - \epsilon^0_t \leq 1) \\
+    &= \exp\bigl(-2[(\epsilon^+_t - \epsilon^-_t)/2]^2\bigr) = \exp(-2\gamma_t^2).
+\end{align*}
+Trong đó:
+\begin{itemize}
+    \item (*): Áp dụng tính lõm của hàm căn thức $\sqrt{1 - x} \leq 1 - x/2$ với mọi $x \le 1$.
+    \item (**): Áp dụng bất đẳng thức cơ bản $1 - x \leq e^{-x}$ với mọi $x \in \R$.
+\end{itemize}
+
+\textbf{Bước 4: Tổng hợp tích tích lũy.}
+
+Nhân tích lũy cận của các vòng từ $t = 1$ đến $T$:
+\[
+    \RS(f) \leq \prod_{t=1}^T Z_t \leq \exp\Biggl(-2 \sum_{t=1}^T \gamma_t^2\Biggr).
+\]
+Định lý được chứng minh hoàn chỉnh và chặt chẽ.
+\end{proof}
+
+\begin{tcolorbox}[colback=yellow!5, colframe=orange!70!black, title={\textbf{Cận hội tụ dưới điều kiện yếu hơn (Weaker Edge Condition)}}]
+Trong trường hợp tổng quát hơn, giáo trình Mohri (trang 248) chỉ ra rằng một điều kiện yếu hơn cũng đủ để RankBoost hội tụ theo hàm mũ. Cụ thể, nếu tồn tại $\gamma > 0$ sao cho với mọi $t \in [T]$:
+\begin{equation}
+    \gamma_t \geq \gamma \sqrt{1 - \epsilon^0_t} \quad \Longleftrightarrow \quad \gamma \leq \frac{\epsilon^+_t - \epsilon^-_t}{2\sqrt{1 - \epsilon^0_t}},
+    \label{eq:weaker_edge}
+\end{equation}
+thì hằng số chuẩn hóa $Z_t \leq \exp(-2\gamma^2)$ vẫn được đảm bảo, dẫn đến sai số huấn luyện giảm nhanh theo hàm mũ $\RS(f) \leq \exp(-2\gamma^2 T)$. Điều này cho thấy thuật toán hoạt động cực kỳ linh hoạt ngay cả khi phần lớn các cặp dữ liệu không phân biệt được ($\epsilon^0_t$ lớn).
+\end{tcolorbox}
+
+\subsubsection{Ví dụ tính toán từng bước minh hoạ RankBoost}
+
+Giả sử chúng ta có 3 đối tượng $\{a, b, c\}$ với thứ tự thực tế là $c > b > a$. Tập dữ liệu huấn luyện gồm 3 cặp preference có nhãn $y_i = +1$:
+\begin{enumerate}
+    \item $p_1 = (c, b)$ với nhãn $y_1 = +1$ (c cao hơn b)
+    \item $p_2 = (b, a)$ với nhãn $y_2 = +1$ (b cao hơn a)
+    \item $p_3 = (c, a)$ với nhãn $y_3 = +1$ (c cao hơn a)
+\end{enumerate}
+Giả sử tại vòng $t = 1$, phân phối trọng số ban đầu không đều: $D_1 = [0.5, 0.2, 0.3]$.
+
+Xét một base ranker $h_1$ được chọn thỏa mãn:
+\begin{itemize}
+    \item Xếp đúng cặp $p_1$: $h_1(c) - h_1(b) = 1 \implies y_1 \cdot \text{diff} = 1$
+    \item Xếp sai cặp $p_2$: $h_1(b) - h_1(a) = -1 \implies y_2 \cdot \text{diff} = -1$
+    \item Xếp đúng cặp $p_3$: $h_1(c) - h_1(a) = 1 \implies y_3 \cdot \text{diff} = 1$
+\end{itemize}
+
+Tính toán trọng số tích lũy trên phân phối $D_1$:
+\begin{itemize}
+    \item $\epsilon^+_1 = D_1(1) + D_1(3) = 0.5 + 0.3 = 0.8$ (tổng trọng số xếp đúng)
+    \item $\epsilon^-_1 = D_1(2) = 0.2$ (tổng trọng số xếp sai)
+    \item $\epsilon^0_1 = 0.0$ (không có cặp phân biệt trùng)
+\end{itemize}
+Biên của base ranker đạt: $\gamma_1 = (\epsilon^+_1 - \epsilon^-_1)/2 = 0.3$.
+
+Hệ số tin cậy đóng góp của base ranker $h_1$ là:
+\[
+    \alpha_1 = \frac{1}{2} \log\left(\frac{\epsilon^+_1}{\epsilon^-_1}\right) = \frac{1}{2} \log\left(\frac{0.8}{0.2}\right) = \log(2) \approx 0.693
+\]
+Hằng số chuẩn hoá $Z_1$ là:
+\[
+    Z_1 = 2\sqrt{\epsilon^+_1 \epsilon^-_1} + \epsilon^0_1 = 2\sqrt{0.8 \times 0.2} + 0 = 0.8
+\]
+
+Cập nhật phân phối $D_2$ thích ứng cho vòng sau:
+\begin{itemize}
+    \item Cặp xếp đúng $p_1$: $D_2(1) = \frac{D_1(1) e^{-\alpha_1}}{Z_1} = \frac{0.5 \times 0.5}{0.8} = 0.3125$
+    \item Cặp xếp sai $p_2$: $D_2(2) = \frac{D_1(2) e^{\alpha_1}}{Z_1} = \frac{0.2 \times 2}{0.8} = 0.5000$
+    \item Cặp xếp đúng $p_3$: $D_2(3) = \frac{D_1(3) e^{-\alpha_1}}{Z_1} = \frac{0.3 \times 0.5}{0.8} = 0.1875$
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[scale=0.85]
+        \begin{axis}[
+            ybar,
+            enlargelimits=0.15,
+            legend style={at={(0.5,-0.2)}, anchor=north, legend columns=-1},
+            ylabel={Trọng số phân phối $D_t(i)$},
+            symbolic x coords={Cặp 1 (Đúng), Cặp 2 (Sai), Cặp 3 (Đúng)},
+            xtick=data,
+            nodes near coords,
+            nodes near coords align={vertical},
+            ymin=0, ymax=0.6,
+            bar width=18pt,
+            width=10.5cm,
+            height=6.2cm
+        ]
+            \addplot[fill=blue!30, draw=blue] coordinates {
+                (Cặp 1 (Đúng), 0.5)
+                (Cặp 2 (Sai), 0.2)
+                (Cặp 3 (Đúng), 0.3)
+            };
+            \addplot[fill=orange!40, draw=orange] coordinates {
+                (Cặp 1 (Đúng), 0.3125)
+                (Cặp 2 (Sai), 0.5)
+                (Cặp 3 (Đúng), 0.1875)
+            };
+            \legend{Vòng $t=1$ ($D_1$), Vòng $t=2$ ($D_2$)}
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Sự thay đổi trọng số phân phối cặp $D_t$ qua 2 vòng boosting trong ví dụ huấn luyện (minh họa thực tế cho cơ chế cập nhật của RankBoost). Trọng số của cặp bị xếp sai $p_2$ tăng vọt từ $0.20$ lên $0.50$, ép thuật toán vòng sau phải sửa chữa lỗi sai này.}
+    \label{fig:weight_shift}
+\end{figure}
+
+Sự phân bổ lại trọng số phân phối được trực quan hóa tại Hình~\ref{fig:weight_shift}. Trọng số của cặp xếp sai tăng vọt làm cơ sở thúc đẩy RankBoost tăng cường độ chính xác liên tục.
+
+\begin{tcolorbox}[colback=extensioncolor, colframe=yellow!60!black, title={\textbf{[MỞ RỘNG] Phản ví dụ: Sự sụp đổ của Weak Ranking Assumption với Preference Cycle}}]
+Một giả thiết tối quan trọng để RankBoost hội tụ là \textit{Weak Ranking Assumption}: tồn tại $\gamma > 0$ sao cho ở mỗi vòng $\gamma_t \geq \gamma > 0$. Chúng ta sẽ xây dựng một ví dụ phản chứng chỉ ra rằng khi preference chứa \textbf{chu trình không bắc cầu} (non-transitive cycles), giả thiết này sẽ bị vi phạm và RankBoost không thể học được hoàn hảo.
+
+Xét 3 phần tử $\{x_1, x_2, x_3\}$ có preference dạng chu trình kéo theo:
+\[
+    f(x_1, x_2) = +1, \quad f(x_2, x_3) = +1, \quad f(x_3, x_1) = +1.
+\]
+Giả sử tập giả thuyết $\Hcal$ gồm các scoring functions tuyến tính $h(x) = w \cdot x$. Do scoring function luôn cảm sinh một thứ tự bắc cầu (transitive), các thứ tự có thể biểu diễn bởi $h \in \Hcal$ chỉ có thể là các hoán vị tuyến tính không có chu trình. 
+
+Bất kỳ hoán vị tuyến tính nào trên 3 phần tử cũng chỉ có thể xếp đúng tối đa 2 trong 3 cặp preference trên và bắt buộc phải xếp sai ít nhất 1 cặp.
+Giả sử tại vòng $t$, phân phối trọng số hội tụ về dạng đều trên các cặp: $D_t = [1/3, 1/3, 1/3]$. Khi đó, với bất kỳ base ranker $h \in \Hcal$ nào:
+\begin{itemize}
+    \item Nếu $h$ xếp đúng 2 cặp và xếp sai 1 cặp: $\epsilon^+_t = 2/3$ và $\epsilon^-_t = 1/3 \implies \gamma_t = (\epsilon^+_t - \epsilon^-_t)/2 = 1/6 > 0$.
+    \item Tuy nhiên, khi RankBoost tăng trọng số của cặp bị xếp sai lên, phân phối $D$ sẽ thay đổi. Khi phân phối đạt trạng thái cân bằng nơi mà các cặp khó xoay vòng, không còn bất kỳ base ranker nào trong $\Hcal$ có thể đạt được $\epsilon^+_t > \epsilon^-_t$ (chỉ có thể đạt $\epsilon^+_t = \epsilon^-_t$ do tính đối xứng của chu trình).
+\end{itemize}
+Tại thời điểm đó, $\gamma_t = 0 \implies \alpha_t = 0$. Thuật toán dừng lại và \textbf{không thể giảm empirical error về 0}. Điều này phản ánh hạn chế cấu trúc của score-based setting khi đối mặt với preference cycles của con người.
+\end{tcolorbox}
+
+\subsubsection{Liên hệ với Coordinate Descent}
+
+\begin{theorem}{RankBoost $\equiv$ Coordinate Descent (Section 10.4.2)}{rb_cd}
+RankBoost tương đương với việc áp dụng \textit{coordinate descent} trên hàm mục tiêu lồi:
+\begin{equation}
+    F(\bm{\alpha}) = \sum_{i=1}^m \exp\Biggl(-y_i \sum_{j=1}^N \alpha_j (h_j(x'_i) - h_j(x_i))\Biggr).
+    \label{eq:F_obj}
+\end{equation}
+\end{theorem}
+
+\begin{proof}[Chứng minh chi tiết]
+Tại bước $t$, coordinate descent tìm kiếm hướng tọa độ đơn vị $e_k$ tương ứng với base ranker $h_k$ thỏa mãn cực tiểu hóa \textit{directional derivative}:
+\[
+    F'(\bm{\alpha}_{t-1}; e_k) = \lim_{\eta \to 0} \frac{F(\bm{\alpha}_{t-1} + \eta e_k) - F(\bm{\alpha}_{t-1})}{\eta}.
+\]
+
+Lấy đạo hàm riêng theo hướng $\eta$ tại điểm $\eta = 0$:
+\begin{align*}
+    F'(\bm{\alpha}_{t-1}; e_k)
+    &= -\sum_{i=1}^m y_i (h_k(x'_i) - h_k(x_i)) e^{-y_i \sum_j \alpha_{t-1,j}(h_j(x'_i) - h_j(x_i))} \\
+    &= -\sum_{i=1}^m y_i (h_k(x'_i) - h_k(x_i)) D_t(i) m \prod_{s=1}^{t-1} Z_s \quad (\text{áp dụng } \eqref{eq:D_t1_identity}) \\
+    &= -\left[ \sum_{i: y_i \Delta h_k = 1} D_t(i) - \sum_{i: y_i \Delta h_k = -1} D_t(i) \right] \cdot m \prod_{s=1}^{t-1} Z_s \\
+    &= -[\epsilon^+_t - \epsilon^-_t] \cdot m \prod_{s=1}^{t-1} Z_s = -2\gamma_t \cdot m \prod_{s=1}^{t-1} Z_s.
+\end{align*}
+Để cực tiểu hóa đạo hàm theo hướng (đi theo hướng dốc giảm nhanh nhất), ta cần cực đại hóa đại lượng $\gamma_t$, điều này tương đương tuyệt đối với tiêu chí chọn base ranker yếu tốt nhất ở Bước 3.
+
+Tìm độ dài bước tối ưu $\eta = \alpha_t$ bằng cách giải đạo hàm bằng $0$:
+\[
+    \frac{dF(\bm{\alpha}_{t-1} + \eta e_k)}{d\eta} = 0 \iff -\epsilon^+_t e^{-\eta} + \epsilon^-_t e^{\eta} = 0 \iff e^{2\eta} = \frac{\epsilon^+_t}{\epsilon^-_t} \iff \eta = \frac{1}{2}\log\frac{\epsilon^+_t}{\epsilon^-_t}$.
+\]
+Giá trị bước nhảy $\eta$ khớp chính xác với hệ số tin cậy $\alpha_t$ trong RankBoost.
+\end{proof}
+
+\begin{tcolorbox}[colback=blue!5, colframe=blue!50!black]
+\textbf{Nhận xét}: Phương trình \eqref{eq:F_obj} là một cận trên lồi chặt của hàm tổn thất nhị phân thực tế. RankBoost thực chất chính là giải pháp tối ưu hóa tối tân sử dụng gradient lồi trên bao lồi của các bộ phân hạng yếu.
+\end{tcolorbox}
+
+\subsubsection{Margin bound cho ensemble methods trong ranking}
+
+\begin{corollary}{Margin Bound for Ensembles in Ranking (Corollary 10.4)}{ensemble_bound}
+Cho $\Hcal$ là tập hàm thực. Với $\rho > 0$, $\delta > 0$, với xác suất ít nhất $1 - \delta$, với mọi bộ phân hạng ensemble lồi $h \in \conv(\Hcal)$:
+\begin{equation}
+    R(h) \leq \RR{\rho}(h) + \frac{2}{\rho}\bigl[R^{D_1}_m(\Hcal) + R^{D_2}_m(\Hcal)\bigr] + \sqrt{\frac{\log(1/\delta)}{2m}}.
+    \label{eq:ensemble_bound_formula}
+\end{equation}
+Trong đó, $\RR{\rho}(h) \equiv \widehat{R}_{S,\rho}(h)$ là **empirical margin ranking loss** (sai số lề thực nghiệm trên tập mẫu $S$ với lề $\rho$) và hai số hạng Rademacher $\mathfrak{R}_m^{D_1}(\mathcal{H})$ và $\mathfrak{R}_m^{D_2}(\mathcal{H})$ đều có cùng kích thước mẫu là $m$ vì đây là cận tổng quát (general bound) cho preference ranking của giáo trình Mohri. Tuy nhiên, cần lưu ý một điểm tinh tế rằng khi áp dụng sang bipartite ranking, do các mẫu tích cực và tiêu cực được lấy độc lập từ hai phân phối riêng biệt với kích thước mẫu lần lượt là $m$ và $n$, cận Rademacher tương ứng sẽ tách thành hai số hạng ứng với hai kích thước mẫu khác nhau là $\mathfrak{R}_m^{D^+}(\mathcal{H})$ và $\mathfrak{R}_n^{D^-}(\mathcal{H})$.
+\end{corollary}
+
+\begin{proof}
+Áp dụng Định lý tổng quát về chặn lề phân hạng (Theorem~\ref{thm:margin_ranking}) cho không gian giả thuyết $\conv(\Hcal)$ và kết hợp kết quả bổ đề $\hat{R}_S(\conv(\Hcal)) = \hat{R}_S(\Hcal)$.
+\end{proof}
+
+\textbf{Hệ thống 3 Chặn Tổng quát hóa của giáo trình Mohri (trang 249):}
+
+Để phân tích sâu sắc cấu trúc lý thuyết tổng quát hóa, giáo trình gốc \citep{mohri2018foundations} thiết lập hệ thống 3 chặn toán học chặt chẽ. Đặt $f = \sum_{t=1}^T \alpha_t h_t$ là ensemble mạnh thu được từ RankBoost. Vì $f$ và phiên bản chuẩn hóa $f/\norm{\bm{\alpha}}_1 \in \conv(\Hcal)$ tạo ra cùng thứ tự xếp hạng tương đối, ta lần lượt có:
+
+1. **Chặn biên thực nghiệm tổng quát (Theorem 10.2 / Định lý 10.2):**
+\begin{equation}
+    R(h) \leq \hat{R}_{S,\rho}(h) + \frac{2}{\rho}\bigl[\widehat{\mathcal{R}}_S(\Hcal_{D_1}) + \widehat{\mathcal{R}}_S(\Hcal_{D_2})\bigr] + \sqrt{\frac{\log(1/\delta)}{2m}}.
+    \label{eq:bound_thm_10_2}
+\end{equation}
+
+2. **Chặn biên thực nghiệm cho chuẩn hóa $f/\norm{\bm{\alpha}}_1$ (Phương trình 10.18 của sách):**
+\begin{equation}
+    R(f) \leq \hat{R}_{S,\rho}\left(\frac{f}{\norm{\bm{\alpha}}_1}\right) + \frac{2}{\rho}\bigl[\widehat{\mathcal{R}}_S(\Hcal_{D_1}) + \widehat{\mathcal{R}}_S(\Hcal_{D_2})\bigr] + \sqrt{\frac{\log(1/\delta)}{2m}}.
+    \label{eq:bound_10_18}
+\end{equation}
+
+3. **Chặn biên thực nghiệm dựa trên Rademacher Complexity biên (Phương trình 10.19 của sách):**
+Do độ phức tạp Rademacher thực nghiệm $\widehat{\mathcal{R}}_S(\Hcal_{D_i})$ luôn được chặn trên bởi Rademacher Complexity tổng quát $R^{D_i}_m(\Hcal)$, ta có chặn tối ưu không phụ thuộc vào tập mẫu cụ thể:
+\begin{equation}
+    R(f) \leq \hat{R}_{S,\rho}\left(\frac{f}{\norm{\bm{\alpha}}_1}\right) + \frac{2}{\rho}\bigl[R^{D_1}_m(\Hcal) + R^{D_2}_m(\Hcal)\bigr] + \sqrt{\frac{\log(1/\delta)}{2m}}.
+    \label{eq:bound_10_19}
+\end{equation}
+
+\begin{tcolorbox}[colback=yellow!5, colframe=orange!70!black, title={\textbf{Quan sát then chốt}}]
+Cả ba chặn trên đều có đặc tính vô cùng quan trọng: **chúng hoàn toàn không phụ thuộc vào số lượng vòng lặp boosting $T$**. Chúng chỉ phụ thuộc vào margin $\rho$, kích thước mẫu dữ liệu $m$, và năng lực biểu diễn Rademacher complexity của tập $\Hcal$. Điều này giải thích trên phương diện lý thuyết tại sao RankBoost có khả năng kháng quá khớp (overfitting) cực kỳ mạnh mẽ ngay cả khi chạy với số vòng lặp $T$ rất lớn \citep{rudin2005margin}.
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=extensioncolor, colframe=yellow!60!black, title={\textbf{[MỞ RỘNG] Hai hướng tổng quát hóa thuật toán RankBoost (trang 248)}}]
+Giáo trình Mohri vạch ra hai hướng mở rộng vô cùng quan trọng đối với thuật toán RankBoost cơ bản:
+\begin{enumerate}
+    \item **Không gian giả thuyết xuất thực tế**: Thay vì chỉ giới hạn base rankers trả về nhị phân $\{0,1\}$, thuật toán được tổng quát hóa cho phép base rankers trả về giá trị thực bất kỳ trong $[0,1]$ hoặc $\R$. Điều này cho phép sử dụng các mô hình cơ sở mạnh hơn như cây quyết định (decision trees).
+    \item **Tối ưu hóa hệ số tin cậy phi đóng-form (Non-closed-form alpha)**: Trong trường hợp tổng quát trên, hệ số tin cậy $\alpha_t$ không còn công thức nghiệm đóng (closed-form) dạng $\frac{1}{2}\log(\epsilon^+_t/\epsilon^-_t)$ đơn giản nữa. Khi đó, $\alpha_t$ bắt buộc phải được giải bằng các thuật toán tối ưu hóa số học một chiều như phương pháp tìm kiếm đường thẳng (line search) hoặc lặp Newton-Raphson để cực tiểu hóa hệ số chuẩn hóa toàn cục $Z_t$.
+\end{enumerate}
+\end{tcolorbox}
+
+\begin{tcolorbox}[colback=extensioncolor, colframe=yellow!60!black, title={\textbf{[MỞ RỘNG] Smooth Margin RankBoost và tối ưu lề thực tế}}]
+RankBoost chuẩn tối ưu hóa hàm tổn thất lũy thừa nhưng không cực đại hóa margin một cách trực tiếp. \citet{rudin2005margin} giới thiệu biến thể \textit{Smooth Margin RankBoost} bằng phương pháp tối ưu hóa hàm mục tiêu chuẩn hóa entropy:
+\[
+    F_{\text{smooth}}(\bm{\alpha}) = -\frac{1}{T}\log F(\bm{\alpha}),
+\]
+chỉ ra tốc độ hội tụ margin tiệm cận tối ưu vượt trội. Tuy nhiên, các phân tích thực nghiệm chỉ ra RankBoost nguyên bản vẫn cực kỳ bền vững trên đa số tập dữ liệu thực tế.
+\end{tcolorbox}
