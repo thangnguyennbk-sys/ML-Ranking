@@ -23,16 +23,13 @@ Thiết lập này rất tự nhiên trong các ứng dụng như \textbf{search
 \begin{table}[h]
 \centering
 \small
-\begin{tabular}{|p{3.8cm}|p{4.8cm}|p{4.8cm}|}
+\begin{tabular}{lll}
 \hline
 \textbf{Đặc điểm} & \textbf{Score-based} & \textbf{Preference-based} \\
 \hline
 Đầu ra học & Hàm điểm $h:\mathcal{X}\to\mathbb{R}$ & Hàm ưu tiên $h:\mathcal{X}\times\mathcal{X}\to[0,1]$ \\
-\hline
 Tính bắc cầu & Bắt buộc (do dùng điểm số) & Không bắt buộc \\
-\hline
 Phạm vi xếp hạng & Toàn bộ $\mathcal{X}$ & Tập con truy vấn $X \subseteq \mathcal{X}$ \\
-\hline
 Liên hệ với phân loại & Gián tiếp & Trực tiếp (quy về classification) \\
 \hline
 \end{tabular}
@@ -195,14 +192,34 @@ Trong cài đặt nhị phân (bipartite), các chặn sau được chứng minh
 \end{align}
 \end{theorem}
 
-\begin{proof}[Ý tưởng chứng minh]
-Chứng minh đi theo hai bước. Đặt $p_{uv} = \mathbb{E}_{\sigma^*|X}[\mathbf{1}_{\sigma^*(v) < \sigma^*(u)}]$ là xác suất $v$ được xếp trước $u$ trong thứ hạng mục tiêu.
+\begin{proof}[Chứng minh chi tiết]
+Chứng minh sử dụng phân tích xác suất trên từng cặp. Ký hiệu $p_{uv}^* = \mathbb{E}_{\sigma^*|X}[\mathbf{1}_{\sigma^*(v) < \sigma^*(u)}]$ là xác suất $v$ được ưu tiên hơn $u$ trong $\sigma^*$.
 
-\textbf{Bước 1: Phân tích mất mát của SBD.} Với cặp $(u,v)$, thuật toán SBD xếp $u$ trước $v$ khi $\mathrm{deg}_h(u) \geq \mathrm{deg}_h(v)$. Mất mát xảy ra khi SBD xếp $u$ trước $v$ (do $\mathrm{deg}_h(u) > \mathrm{deg}_h(v)$) nhưng thực tế $v$ nên xếp trước $u$ (tức $p_{uv}$ lớn).
+\textbf{Bước 1: Mất mát của sort-by-degree.}
+Thuật toán SBD xếp $u$ trước $v$ khi và chỉ khi $\mathrm{deg}_h(u) > \mathrm{deg}_h(v)$. Xác suất này là:
+\[
+    \Pr[\mathrm{SBD \ xếp \ } u \text{ trước } v] = \Pr\left[\sum_{w \neq u} h(u,w) > \sum_{w \neq v} h(v,w)\right].
+\]
 
-\textbf{Bước 2: Liên hệ với mất mát của $h$.} Bằng cách khai thác điều kiện PIIA, người ta chỉ ra được rằng mỗi sự kiện ``SBD xếp sai một cặp'' tương ứng với việc hàm ưu tiên $h$ mắc ít nhất một lỗi trên cặp đó (theo một nghĩa trung bình). Phân tích cẩn thận dẫn đến hệ số 2 trong chặn.
+SBD mắc lỗi trên cặp $(u,v)$ khi nó xếp $u$ trước $v$ nhưng $\sigma^*$ xếp $v$ trước $u$. Mất mát kỳ vọng:
+\begin{equation}
+    \mathbb{E}[L(\mathrm{SBD}, \sigma^*)] = \frac{2}{n(n-1)} \sum_{u \neq v} \Pr[\text{SBD xếp } u \text{ trước } v] \cdot p_{uv}^*.
+\end{equation}
 
-Hệ số 2 xuất hiện vì mỗi lỗi của $h$ trên một cặp có thể gây ra tối đa 2 lỗi xếp hạng sau khi tổng hợp qua sort-by-degree.
+\textbf{Bước 2: Chặn trên từ hàm ưu tiên $h$.}
+Giả sử $h$ cảm sinh một hàm so sánh bằng cách lấy ngưỡng (ví dụ $h(u,v) > 0.5$ nghĩa là ``$u$ ưu tiên hơn $v$''). Trong cài đặt nhị phân (bipartite), người ta chứng minh rằng:
+\begin{align*}
+    \Pr[\text{SBD xếp } u \text{ trước } v] &\leq \Pr[\text{hầu hết } w: h(u,w) \geq h(v,w)] \\
+    &\leq p_{uv}^* + \mathbb{E}[L(h, \sigma^*)],
+\end{align*}
+do PIIA và tính nhất quán của $h$.
+
+\textbf{Bước 3: Kết luận.}
+Bằng cách tổng hợp trên tất cả các cặp và lấy kỳ vọng theo $(X, \sigma^*)$:
+\[
+    \mathbb{E}[L(\mathrm{SBD}, \sigma^*)] \leq 2 \mathbb{E}[L(h, \sigma^*)],
+\]
+which proves \eqref{eq:sbd_loss}. Chặn regret \eqref{eq:sbd_regret} tuân theo định nghĩa.
 \end{proof}
 
 \paragraph{Hạn chế của Sort-by-Degree.}
@@ -265,9 +282,9 @@ Trong cả hai trường hợp, $L(\mathcal{A}, \sigma^*) = 2 \cdot L(h, \sigma^
 \end{proof}
 
 \begin{morong}
-\textbf{Tại sao chu trình là "kẻ thù" của thuật toán xác định?}
+\textbf{Tại sao chu trình là thách thức của thuật toán xác định?}
 
-Bằng chứng trên cho thấy: khi hàm ưu tiên $h$ cảm sinh chu trình $u \succ_h w \succ_h v \succ_h u$, thuật toán xác định không thể làm hài lòng đồng thời tất cả các cặp. Nó buộc phải \emph{cam kết} một thứ tự cụ thể, và đối phương (adversary) luôn có thể chọn $\sigma^*$ để phạt nặng lựa chọn đó. Ngẫu nhiên hóa (randomization) cho phép thoát khỏi bẫy này bằng cách phân tán xác suất lỗi đều hơn trên các cặp.
+Khi hàm ưu tiên $h$ cảm sinh chu trình (ví dụ $u \succ_h v \succ_h w \succ_h u$), một thuật toán xác định buộc phải "lựa chọn" một hướng cụ thể cho mỗi cặp. Chọn $u$ trước $v$ có thể tốt với một số $(X, \sigma^*)$, nhưng đối phương có thể chọn $\sigma^*$ sao cho lựa chọn này bị phạt. Ngẫu nhiên hóa tránh được hạn chế này bằng cách "đặt cược" theo xác suất $h(u,v)$, không cam kết hoàn toàn vào một hướng.
 \end{morong}
 
 % -------- 10.6.3 Randomized --------
@@ -284,19 +301,19 @@ Tại mỗi bước đệ quy, một phần tử \emph{pivot} $u$ được chọ
 \end{itemize}
 Thuật toán đệ quy trên mảng bên trái và bên phải, sau đó ghép nối kết quả.
 
-\begin{center}
-\begin{tikzpicture}[
-    box/.style={draw, rounded corners, minimum width=2.2cm, minimum height=0.7cm, align=center, font=\small},
-    arr/.style={->, >=stealth, thick}
-]
-    \node[box, fill=yellow!20] (pivot) at (0,0) {Pivot $u$ \\ (chọn ngẫu nhiên)};
-    \node[box, fill=blue!10] (left) at (-3.5,-1.5) {Bên trái \\ $\{v: h(v,u) > \text{rand}\}$};
-    \node[box, fill=red!10] (right) at (3.5,-1.5) {Bên phải \\ $\{v: h(u,v) > \text{rand}\}$};
-    \draw[arr] (pivot.south west) -- (left.north east) node[midway, left, font=\scriptsize, sloped] {xác suất $h(v,u)$};
-    \draw[arr] (pivot.south east) -- (right.north west) node[midway, right, font=\scriptsize, sloped] {xác suất $h(u,v)$};
-    \node[font=\scriptsize, gray] at (0,-2.2) {Kết quả: [đệ quy trái] $+$ [$u$] $+$ [đệ quy phải]};
-\end{tikzpicture}
-\end{center}
+% \begin{center}
+% \begin{tikzpicture}[
+%     box/.style={draw, rounded corners, minimum width=2.2cm, minimum height=0.7cm, align=center, font=\small},
+%     arr/.style={->, >=stealth, thick}
+% ]
+%     \node[box, fill=yellow!20] (pivot) at (0,0) {Pivot $u$ \\ (chọn ngẫu nhiên)};
+%     \node[box, fill=blue!10] (left) at (-3.5,-1.5) {Bên trái \\ $\{v: h(v,u) > \text{rand}\}$};
+%     \node[box, fill=red!10] (right) at (3.5,-1.5) {Bên phải \\ $\{v: h(u,v) > \text{rand}\}$};
+%     \draw[arr] (pivot.south west) -- (left.north east) node[midway, left, font=\scriptsize, sloped] {xác suất $h(v,u)$};
+%     \draw[arr] (pivot.south east) -- (right.north west) node[midway, right, font=\scriptsize, sloped] {xác suất $h(u,v)$};
+%     \node[font=\scriptsize, gray] at (0,-2.2) {Kết quả: [đệ quy trái] $+$ [$u$] $+$ [đệ quy phải]};
+% \end{tikzpicture}
+% \end{center}
 
 \begin{theorem}[Chặn hiệu năng cho QuickSort ngẫu nhiên -- Định lý 10.4 mở rộng]
 \label{thm:quicksort_pref}
@@ -339,13 +356,11 @@ Lấy kỳ vọng theo $(X, \sigma^*)$ ta được đẳng thức \eqref{eq:qs_l
 \end{itemize}
 
 \begin{morong}
-\textbf{Tại sao ngẫu nhiên hóa giúp loại bỏ hệ số 2?}
+\textbf{Ưu thế của ngẫu nhiên hóa so với xác định.}
 
-Trực giác: thuật toán xác định phải \emph{cam kết} một hướng cho mỗi cặp đảo vị (ví dụ: luôn xếp $u$ trước $v$ nếu $\mathrm{deg}(u) > \mathrm{deg}(v)$). Trong trường hợp chu trình, quyết định này có thể gây lỗi hệ thống.
+Thuật toán xác định (sort-by-degree) gặp hạn chế vì phải "cam kết" lựa chọn vị trí cho mỗi cặp. Khi hàm $h$ có chu trình, lựa chọn này luôn gây lỗi hệ thống với hệ số nhân 2.
 
-Thuật toán ngẫu nhiên \emph{phân tán xác suất} theo đúng mức $h(u,v)$ cho mỗi cặp. Điều này đảm bảo rằng về mặt kỳ vọng, xác suất xếp sai một cặp bằng chính xác mức ``tin cậy sai'' của $h$ cho cặp đó -- không có thêm lỗi hệ thống nào.
-
-Nói cách khác, QuickSort ngẫu nhiên là một \emph{unbiased estimator} của hàm ưu tiên $h$, trong khi sort-by-degree là một \emph{biased estimator} không tránh khỏi hệ số 2.
+Thuật toán ngẫu nhiên (QuickSort) tránh được bẫy này bằng cách phân phối xác suất xếp sai mỗi cặp bằng chính xác $h(u,v)$ -- là một \emph{unbiased estimator} của hàm ưu tiên. Kết quả: không có thêm lỗi nào so với chất lượng của $h$ bản thân.
 \end{morong}
 
 % -------- 10.6.4 Extension --------
@@ -534,29 +549,29 @@ Giá trị NDCG cao (0.985) cho thấy thứ hạng dự đoán rất gần vớ
 \label{sec:criteria_connections}
 
 \begin{morong}
-\textbf{Bảng so sánh toàn diện các tiêu chí xếp hạng}
 
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{|c|c|c|c|c|}
-\hline
-\textbf{Tiêu chí} & \textbf{Nhãn yêu cầu} & \textbf{Phạm vi} & \textbf{Nhấn mạnh} & \textbf{Ứng dụng điển hình} \\
-\hline
-Pairwise error & Nhị phân / thứ hạng & $[0,1]$ & Toàn bộ cặp & Lý thuyết học máy \\
-\hline
-AUC & Nhị phân & $[0,1]$ & Tổng thể, mọi ngưỡng & Phân loại y tế, fraud \\
-\hline
-Precision@$k$ & Nhị phân & $[0,1]$ & Top-$k$ chính xác & Search engine \\
-\hline
-Average Precision & Nhị phân & $[0,1]$ & Vị trí các điểm dương & IR đánh giá hệ thống \\
-\hline
-DCG / NDCG & Thứ tự liên quan & $[0,1]$ & Liên quan + vị trí & Web search, khuyến nghị \\
-\hline
-\end{tabular}
-\caption{So sánh các tiêu chí xếp hạng trong học máy và truy xuất thông tin.}
-\label{tab:criteria_comparison}
-\end{table}
+% \textbf{Bảng so sánh toàn diện các tiêu chí xếp hạng}
+% \begin{table}[H]
+% \centering
+% \small
+% \begin{tabular}{|c|c|c|c|c|}
+% \hline
+% \textbf{Tiêu chí} & \textbf{Nhãn yêu cầu} & \textbf{Phạm vi} & \textbf{Nhấn mạnh} & \textbf{Ứng dụng điển hình} \\
+% \hline
+% Pairwise error & Nhị phân / thứ hạng & $[0,1]$ & Toàn bộ cặp & Lý thuyết học máy \\
+% \hline
+% AUC & Nhị phân & $[0,1]$ & Tổng thể, mọi ngưỡng & Phân loại y tế, fraud \\
+% \hline
+% Precision@$k$ & Nhị phân & $[0,1]$ & Top-$k$ chính xác & Search engine \\
+% \hline
+% Average Precision & Nhị phân & $[0,1]$ & Vị trí các điểm dương & IR đánh giá hệ thống \\
+% \hline
+% DCG / NDCG & Thứ tự liên quan & $[0,1]$ & Liên quan + vị trí & Web search, khuyến nghị \\
+% \hline
+% \end{tabular}
+% \caption{So sánh các tiêu chí xếp hạng trong học máy và truy xuất thông tin.}
+% \label{tab:criteria_comparison}
+% \end{table}
 
 \textbf{Mối liên hệ toán học giữa AUC và pairwise error} đã được phân tích trong Mục~\ref{sec:bipartite}: $\mathrm{AUC} = 1 - R(h)$.
 
@@ -575,7 +590,7 @@ trong đó $Q$ là số truy vấn. MAP là tiêu chí chuẩn để đánh giá
 % -------- Liên hệ chương khác --------
 \subsubsection{Mối Liên Hệ Giữa Preference-Based Setting Và Các Phần Khác}
 
-\paragraph{Liên hệ với Score-based Setting (Mục 10.1).}
+\paragraph{Liên hệ với Score-based Setting.}
 Score-based và preference-based là hai góc nhìn bổ trợ nhau:
 \begin{itemize}
     \item Mọi hàm scoring $f: \mathcal{X} \to \mathbb{R}$ đều cảm sinh một hàm ưu tiên bắc cầu $h_f(u,v) = \mathbf{1}_{f(u) > f(v)} + \frac{1}{2}\mathbf{1}_{f(u)=f(v)}$.
@@ -583,10 +598,10 @@ Score-based và preference-based là hai góc nhìn bổ trợ nhau:
     \item Hạn chế cơ bản: score-based \emph{bắt buộc} bắc cầu; preference-based \emph{không yêu cầu} tính chất này.
 \end{itemize}
 
-\paragraph{Liên hệ với RankBoost (Mục 10.4).}
+\paragraph{Liên hệ với RankBoost.}
 RankBoost tối ưu hóa hàm mất mát pairwise exponential, kết quả là một \emph{hàm scoring} $f = \sum_t \alpha_t h_t$. Khi dùng trong preference-based, kết quả của RankBoost giai đoạn 1 cần được chuyển sang hàm ưu tiên: $h(u,v) = \sigma(f(u) - f(v))$ (hàm sigmoid). Điểm khác biệt là RankBoost tối ưu toàn cục trên không gian $\mathcal{X}$, trong khi preference-based chỉ cần chính xác trên tập con truy vấn $X$.
 
-\paragraph{Liên hệ với Bipartite Ranking (Mục 10.5).}
+\paragraph{Liên hệ với Bipartite Ranking.}
 Cài đặt nhị phân (bipartite) là trường hợp đặc biệt của cả score-based lẫn preference-based. Trong cài đặt này:
 \begin{itemize}
     \item Hàm mất mát $L_\omega$ với $\omega(i,j) = \frac{n(n-1)}{2m^+m^-}$ thu về $1 - \mathrm{AUC}$.
@@ -597,20 +612,20 @@ Cài đặt nhị phân (bipartite) là trường hợp đặc biệt của cả
 Mặc dù phần preference-based setting không trình bày chặn tổng quát hóa theo Rademacher complexity một cách tường minh (vì khuôn khổ regret đã đủ), sự liên hệ ngầm vẫn tồn tại: chất lượng của hàm ưu tiên $h$ ở giai đoạn 1 (học từ dữ liệu) được đảm bảo bởi các chặn generalization của Chương 3 và Định lý 10.1. Regret của giai đoạn 2 sau đó được kiểm soát thông qua regret của $h$ như trong các định lý 10.4, 10.5.
 
 % -------- Tóm tắt --------
-\subsubsection{Tóm Tắt Phần Preference-Based Setting}
+% \subsubsection{Tóm Tắt Phần Preference-Based Setting}
 
-\begin{tcolorbox}[colback=blue!5, colframe=blue!60!black, title={\textbf{Điểm cốt lõi của Preference-Based Setting}}]
-\begin{enumerate}
-    \item \textbf{Hai giai đoạn:} Học hàm ưu tiên $h$ (từ dữ liệu) $\to$ Sinh thứ hạng (trên tập truy vấn). Tách biệt hoàn toàn, giúp dùng bất kỳ classifier nào ở giai đoạn 1.
+% \begin{tcolorbox}[colback=blue!5, colframe=blue!60!black, title={\textbf{Điểm cốt lõi của Preference-Based Setting}}]
+% \begin{enumerate}
+%     \item \textbf{Hai giai đoạn:} Học hàm ưu tiên $h$ (từ dữ liệu) $\to$ Sinh thứ hạng (trên tập truy vấn). Tách biệt hoàn toàn, giúp dùng bất kỳ classifier nào ở giai đoạn 1.
     
-    \item \textbf{Không cần bắc cầu:} $h$ có thể không bắc cầu, phù hợp với preference thực tế của con người. Đây là ưu điểm cốt lõi so với score-based.
+%     \item \textbf{Không cần bắc cầu:} $h$ có thể không bắc cầu, phù hợp với preference thực tế của con người. Đây là ưu điểm cốt lõi so với score-based.
     
-    \item \textbf{Sort-by-degree:} Hệ số 2, độ phức tạp $\Omega(n^2)$. Định lý 10.5 chứng minh không thể cải thiện hệ số này với thuật toán xác định.
+%     \item \textbf{Sort-by-degree:} Hệ số 2, độ phức tạp $\Omega(n^2)$. Định lý 10.5 chứng minh không thể cải thiện hệ số này với thuật toán xác định.
     
-    \item \textbf{QuickSort ngẫu nhiên:} Loại bỏ hoàn toàn hệ số 2, đạt $\mathrm{Reg}(\mathcal{A}_{\mathrm{QS}}) \leq \mathrm{Reg}(h)$. Độ phức tạp $O(n \log n)$ hoặc $O(n + k \log k)$ cho top-$k$.
+%     \item \textbf{QuickSort ngẫu nhiên:} Loại bỏ hoàn toàn hệ số 2, đạt $\mathrm{Reg}(\mathcal{A}_{\mathrm{QS}}) \leq \mathrm{Reg}(h)$. Độ phức tạp $O(n \log n)$ hoặc $O(n + k \log k)$ cho top-$k$.
     
-    \item \textbf{Kết luận:} Ngẫu nhiên hóa là \emph{cần thiết và đủ} để đạt được hệ số 1 trong bài toán preference-based ranking.
-\end{enumerate}
-\end{tcolorbox}
+%     \item \textbf{Kết luận:} Ngẫu nhiên hóa là \emph{cần thiết và đủ} để đạt được hệ số 1 trong bài toán preference-based ranking.
+% \end{enumerate}
+% \end{tcolorbox}
 
 \vspace{0.5cm}
