@@ -448,20 +448,48 @@ Tính trực tiếp bằng cách lấy đạo hàm riêng theo $\eta$ tại $\et
 \begin{align*}
     &F'(\bm{\alpha}_{t-1}; e_k) \\
     &= -Z_{\text{accum}} \sum_{i=1}^m \sum_{j=1}^n D_t(i, j) \bigl(h_k(x'_i) - h_k(x_j)\bigr) \\
-    &= -Z_{\text{accum}} \sum_{i=1}^m \sum_{j=1}^n D^+_t(i) D^-_t(j) \bigl(h_k(x'_i) - h_k(x_j)\bigr) \quad (\text{do phân phối tách độc lập}) \\
-    &= -Z_{\text{accum}} \left[ \sum_{i=1}^m D^+_t(i) h_k(x'_i) \sum_{j=1}^n D^-_t(j) - \sum_{i=1}^m D^+_t(i) \sum_{j=1}^n D^-_t(j) h_k(x_j) \right].
+    &= -Z_{\text{accum}} \sum_{i=1}^m \sum_{j=1}^n
+       D^+_t(i)D^-_t(j)\bigl(h_k(x'_i) - h_k(x_j)\bigr) \\
+    &\hspace{7em}(\text{do phân phối tách độc lập}) \\
+    &= -Z_{\text{accum}}
+    \left[
+    \begin{aligned}
+    &\left(\sum_{i=1}^m D^+_t(i) h_k(x'_i)\right)
+      \left(\sum_{j=1}^n D^-_t(j)\right) \\
+    &\quad -
+      \left(\sum_{i=1}^m D^+_t(i)\right)
+      \left(\sum_{j=1}^n D^-_t(j) h_k(x_j)\right)
+    \end{aligned}
+    \right].
 \end{align*}
 
 Do $D^+_t$ và $D^-_t$ là các phân phối xác suất hợp lệ nên tổng của chúng bằng $1$: $\sum_{i=1}^m D^+_t(i) = 1$ và $\sum_{j=1}^n D^-_t(j) = 1$. Thay các tổng này vào:
 \begin{align*}
     &F'(\bm{\alpha}_{t-1}; e_k) \\
-    &= -Z_{\text{accum}} \left[ \sum_{i=1}^m D^+_t(i) h_k(x'_i) \cdot 1 - 1 \cdot \sum_{j=1}^n D^-_t(j) h_k(x_j) \right] \\
-    &= -Z_{\text{accum}} \left[ \E_{i \sim D^+_t}[h_k(x'_i)] - \E_{j \sim D^-_t}[h_k(x_j)] \right].
+    &= -Z_{\text{accum}}
+    \left[
+    \begin{aligned}
+    &\sum_{i=1}^m D^+_t(i) h_k(x'_i) \\
+    &\quad - \sum_{j=1}^n D^-_t(j) h_k(x_j)
+    \end{aligned}
+    \right] \\
+    &= -Z_{\text{accum}}
+    \left[
+    \begin{aligned}
+    &\E_{i \sim D^+_t}[h_k(x'_i)] \\
+    &\quad - \E_{j \sim D^-_t}[h_k(x_j)]
+    \end{aligned}
+    \right].
 \end{align*}
 
 Để cực tiểu hóa đạo hàm theo hướng $F'(\bm{\alpha}_{t-1}; e_k)$ (tức là đi theo hướng giảm nhanh nhất của hàm loss), ta cần \textbf{cực đại hóa hiệu các kỳ vọng}:
 \[
-    \E_{i \sim D^+_t}[h_k(x'_i)] - \E_{j \sim D^-_t}[h_k(x_j)] = \epsilon^+_t - \epsilon^-_t.
+    \begin{aligned}
+    &\E_{i \sim D^+_t}[h_k(x'_i)]
+    -
+    \E_{j \sim D^-_t}[h_k(x_j)] \\
+    &\qquad = \epsilon^+_t - \epsilon^-_t.
+    \end{aligned}
 \]
 Đây chính xác là tiêu chí chọn base ranker $h_t$ trong thuật toán BipartiteRankBoost, hoàn thiện chứng minh toán học cho thuật toán tối ưu.
 \end{morong}
