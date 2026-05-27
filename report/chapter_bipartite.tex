@@ -35,6 +35,32 @@ Sai số thực nghiệm tương ứng trên tập huấn luyện $S^+, S^-$ là
 \end{equation}
 \end{definition}
 
+\begin{example}[Minh hoạ số học cho Bipartite Misranking Error và AUC]
+Giả sử tập mẫu huấn luyện của chúng ta có kích thước nhỏ với $m = 2$ mẫu tích cực $S^+ = (x'_1, x'_2)$ và $n = 2$ mẫu tiêu cực $S^- = (x_1, x_2)$. Xét một scoring function $h$ trả về các điểm số như sau:
+\begin{itemize}
+    \item Các mẫu tích cực: $h(x'_1) = 1.5$, $h(x'_2) = 0.8$.
+    \item Các mẫu tiêu cực: $h(x_1) = 1.0$, $h(x_2) = 0.5$.
+\end{itemize}
+
+Bài toán so sánh cặp bipartite sẽ đánh giá tổng cộng $m \times n = 2 \times 2 = 4$ cặp tích dương-tiêu cực có thể được tạo ra:
+\begin{enumerate}
+    \item Cặp $(x'_1, x_1)$: Có $h(x'_1) = 1.5 > h(x_1) = 1.0 \implies$ Xếp hạng đúng (Term $= 0$).
+    \item Cặp $(x'_1, x_2)$: Có $h(x'_1) = 1.5 > h(x_2) = 0.5 \implies$ Xếp hạng đúng (Term $= 0$).
+    \item Cặp $(x'_2, x_1)$: Có $h(x'_2) = 0.8 < h(x_1) = 1.0 \implies$ Xếp hạng sai! (Term $= 1$ do $h(x'_2) < h(x_1)$).
+    \item Cặp $(x'_2, x_2)$: Có $h(x'_2) = 0.8 > h(x_2) = 0.5 \implies$ Xếp hạng đúng (Term $= 0$).
+\end{enumerate}
+
+Áp dụng công thức sai số thực nghiệm \eqref{eq:R_emp_bipartite}, ta có:
+\[
+    \hat{R}_{S^+, S^-}(h) = \frac{1}{2 \times 2} \sum_{i=1}^2 \sum_{j=1}^2 \mathbf{1}_{h(x'_i) < h(x_j)} = \frac{0 + 0 + 1 + 0}{4} = 0.25 \quad (25\%).
+\]
+Diện tích dưới đường cong ROC (AUC) tương ứng trên tập này thu được:
+\[
+    \mathrm{AUC}(h, U) = 1 - \hat{R}_{S^+, S^-}(h) = 1 - 0.25 = 0.75 \quad (75\%).
+\]
+Ví dụ số học trực quan này chỉ ra bản chất của bipartite ranking: sai số được tính trung bình trên toàn bộ mạng lưới kết nối cặp tích cực - tiêu cực chứ không phụ thuộc vào một ngưỡng phân loại tuyệt đối nào.
+\end{example}
+
 \begin{tcolorbox}[colback=red!5, colframe=red!50!black,
                  title={Khác biệt bản chất với binary classification}]
 Mặc dù cùng làm việc trên hai tập nhãn (positive/negative), \textbf{bipartite ranking không phải là classification}. 
@@ -48,7 +74,7 @@ Một bộ phân lớp tốt (error 0\%) chắc chắn sẽ là một bộ phân
 
 \subsubsection{Vấn đề hiệu năng tính toán: Thách thức $mn$ cặp}
 
-Áp dụng SVM Ranking trực tiếp vào bipartite setting yêu cầu tối ưu hóa hệ thống ràng buộc với $mn$ biến slack. Với kích thước dữ liệu thực tế trung bình $m = n = 1000$, ta phải xử lý tới **một triệu biến slack** -- một thách thức cực lớn làm cạn kiệt tài nguyên RAM và thời gian CPU. Thuật toán RankBoost giải quyết triệt để thách thức này nhờ tính chất phân tích nhân tử đặc biệt dưới đây.
+Áp dụng SVM Ranking trực tiếp vào bipartite setting yêu cầu tối ưu hóa hệ thống ràng buộc với $mn$ biến slack. Với kích thước dữ liệu thực tế trung bình $m = n = 1000$, ta phải xử lý tới \textbf{một triệu biến slack} -- một thách thức cực lớn làm cạn kiệt tài nguyên RAM và thời gian CPU. Thuật toán RankBoost giải quyết triệt để thách thức này nhờ tính chất phân tích nhân tử đặc biệt dưới đây.
 
 \subsubsection{BipartiteRankBoost: Độ phức tạp tuyến tính $\mathcal{O}(m+n)$}
 
@@ -87,16 +113,15 @@ Thế giả thiết quy nạp $D_t(i,j) = D^+_t(i) D^-_t(j)$ và khai triển h�
 \[
     e^{-\alpha_t[h_t(x'_i) - h_t(x_j)]} = e^{-\alpha_t h_t(x'_i)} \cdot e^{\alpha_t h_t(x_j)},
 \]
-ta có thể phân tách hằng số chuẩn hóa toàn cục $Z_t$:
-\[
-    Z_t = \sum_{i=1}^m \sum_{j=1}^n D^+_t(i) D^-_t(j) e^{-\alpha_t h_t(x'_i)} e^{\alpha_t h_t(x_j)}
-    = \left( \sum_{i=1}^m D^+_t(i) e^{-\alpha_t h_t(x'_i)} \right) \left( \sum_{j=1}^n D^-_t(j) e^{\alpha_t h_t(x_j)} \right)
-    = Z^+_t \cdot Z^-_t.
-\]
+\begin{align*}
+    Z_t &= \sum_{i=1}^m \sum_{j=1}^n D^+_t(i) D^-_t(j) e^{-\alpha_t h_t(x'_i)} e^{\alpha_t h_t(x_j)} \\
+    &= \left( \sum_{i=1}^m D^+_t(i) e^{-\alpha_t h_t(x'_i)} \right) \left( \sum_{j=1}^n D^-_t(j) e^{\alpha_t h_t(x_j)} \right) \\
+    &= Z^+_t \cdot Z^-_t.
+\end{align*}
 Thế ngược $Z_t = Z^+_t Z^-_t$ vào biểu thức cập nhật $D_{t+1}(i,j)$, ta thu được:
-\[
+\begin{align*}
     D_{t+1}(i, j) = \left( \frac{D^+_t(i) e^{-\alpha_t h_t(x'_i)}}{Z^+_t} \right) \cdot \left( \frac{D^-_t(j) e^{\alpha_t h_t(x_j)}}{Z^-_t} \right).
-\]
+\end{align*}
 Bổ đề được chứng minh hoàn tất.
 \end{proof}
 
@@ -104,7 +129,40 @@ Bổ đề được chứng minh hoàn tất.
 \begin{equation}
     \E_{(i,j) \sim D_t}[h(x'_i) - h(x_j)] = \E_{i \sim D^+_t}[h(x'_i)] - \E_{j \sim D^-_t}[h(x_j)] = \epsilon^+_t - \epsilon^-_t.
 \end{equation}
-Độ phức tạp tính toán cho mỗi vòng boosting được tối ưu hóa từ **bậc hai $\mathcal{O}(mn)$ xuống tuyến tính $\mathcal{O}(m+n)$**, tạo điều kiện cho RankBoost chạy cực nhanh trên các tập dữ liệu lớn.
+Độ phức tạp tính toán cho mỗi vòng boosting được tối ưu hóa từ \textbf{bậc hai $\mathcal{O}(mn)$ xuống tuyến tính $\mathcal{O}(m+n)$}, tạo điều kiện cho RankBoost chạy cực nhanh trên các tập dữ liệu lớn.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[scale=0.95]
+        % Draw quadratic m x n matrix (quadratic complexity O(mn))
+        \draw[fill=red!5, draw=red!50!black, thick] (0,0) rectangle (2.5,2.5);
+        \draw[step=0.5cm, gray!30, thin] (0,0) grid (2.5,2.5);
+        \node at (1.25,1.25) [align=center, font=\tiny\bfseries\color{red!80!black}] {Ma trận phân phối \\ $D_t \in \R^{m \times n}$ \\ $\mathcal{O}(mn)$ cặp};
+        
+        % Arrow of factorization
+        \draw[ultra thick, ->, >=stealth, blue] (3.2,1.25) -- (4.2,1.25) node[midway, above, font=\tiny\bfseries] {Phân rã};
+        
+        % Linear vectors m and n (linear complexity O(m + n))
+        % Vertical vector D^+ of length m
+        \draw[fill=blue!5, draw=blue!50!black, thick] (5.0,0) rectangle (5.5,2.5);
+        \draw[step=0.5cm, gray!30, thin] (5.0,0) grid (5.5,2.5);
+        \node[rotate=90, font=\tiny\bfseries\color{blue!80!black}] at (5.25,1.25) {$D^+_t \in \R^m$};
+        
+        % Multiplication sign
+        \node at (6.0,1.25) [font=\large\bfseries] {$\times$};
+        
+        % Horizontal vector D^- of length n
+        \draw[fill=orange!5, draw=orange!50!black, thick] (6.5,1.0) rectangle (9.0,1.5);
+        \draw[step=0.5cm, gray!30, thin] (6.5,1.0) grid (9.0,1.5);
+        \node[font=\tiny\bfseries\color{orange!80!black}] at (7.75,1.25) {$D^-_t \in \R^n$};
+        
+        % Complexity labeling below
+        \node at (1.25,-0.5) [font=\tiny\bfseries, color=red!80!black] {Độ phức tạp: $\mathcal{O}(mn)$};
+        \node at (7.0,-0.5) [font=\tiny\bfseries, color=blue!80!black] {Độ phức tạp mới: $\mathcal{O}(m+n)$};
+    \end{tikzpicture}
+    \caption{Bản chất đột phá của BipartiteRankBoost: Phân rã ma trận phân phối cặp toàn cục $D_t(i,j)$ thành tích của hai vector phân phối biên $D^+_t(i)$ và $D^-_t(j)$. Chuyển hóa độ phức tạp tính toán và lưu trữ từ bậc hai $\mathcal{O}(mn)$ sang tuyến tính $\mathcal{O}(m+n)$.}
+    \label{fig:factorization_complexity}
+\end{figure}
 
 Sự cải tiến vượt trội này được hệ thống hóa qua thuật toán chi tiết dưới đây:
 
@@ -128,10 +186,108 @@ Sự cải tiến vượt trội này được hệ thống hóa qua thuật to�
 \end{algorithmic}
 \end{algorithm}
 
+\begin{example}[Mô phỏng chạy thuật toán BipartiteRankBoost từng bước]
+Để chứng minh trực quan tính hiệu quả và cơ chế cập nhật của BipartiteRankBoost, chúng ta chạy mô phỏng chi tiết vòng lặp đầu tiên ($t = 1$) trên tập dữ liệu $m=2$ mẫu tích cực $S^+ = (x'_1, x'_2)$ và $n=2$ mẫu tiêu cực $S^- = (x_1, x_2)$ đã thiết lập ở ví dụ trước.
+
+\begin{enumerate}
+    \item \textbf{Bước 1: Khởi tạo phân phối biên ban đầu.}
+    Ta khởi tạo phân phối biên đều trên các mẫu:
+    \[
+        D^+_1 = [0.5, \ 0.5], \quad D^-_1 = [0.5, \ 0.5].
+    \]
+    
+    \item \textbf{Bước 2: Chọn base ranker $h_1$.}
+    Giả sử thuật toán chọn được base ranker yếu $h_1$ trả về các giá trị phân hạng miền thực:
+    \[
+        h_1(x'_1) = 1.0, \ h_1(x'_2) = 0.6 \quad \text{và} \quad h_1(x_1) = 0.4, \ h_1(x_2) = 0.1.
+    \]
+    Tính toán các kỳ vọng biên tương ứng:
+    \begin{align*}
+        \epsilon^+_1 &= \E_{i \sim D^+_1}[h_1(x'_i)] = 0.5 \times 1.0 + 0.5 \times 0.6 = 0.8, \\
+        \epsilon^-_1 &= \E_{j \sim D^-_1}[h_1(x_j)] = 0.5 \times 0.4 + 0.5 \times 0.1 = 0.25.
+    \end{align*}
+    Hiệu hai kỳ vọng biên đạt: $\epsilon^+_1 - \epsilon^-_1 = 0.8 - 0.25 = 0.55 > 0$ (thỏa mãn điều kiện xếp hạng tốt hơn ngẫu nhiên).
+    
+    \item \textbf{Bước 3: Tính hệ số tin cậy $\alpha_1$.}
+    \[
+        \alpha_1 = \frac{1}{2} \log\left( \frac{\epsilon^+_1}{\epsilon^-_1} \right) = \frac{1}{2} \log\left( \frac{0.8}{0.25} \right) = \frac{1}{2} \log(3.2) \approx 0.5816.
+    \]
+    
+    \item \textbf{Bước 4: Tính các hằng số chuẩn hóa biên dạng đóng.}
+    Áp dụng công thức dạng đóng ở Bước 5 của Thuật toán \ref{alg:bipartite_rankboost}:
+    \begin{align*}
+        Z^+_1 &= 1 - \epsilon^+_1 + \sqrt{\epsilon^+_1 \epsilon^-_1} = 1 - 0.8 + \sqrt{0.8 \times 0.25} = 0.2 + \sqrt{0.2} \approx 0.6472, \\
+        Z^-_1 &= 1 - \epsilon^-_1 + \sqrt{\epsilon^+_1 \epsilon^-_1} = 1 - 0.25 + \sqrt{0.8 \times 0.25} = 0.75 + \sqrt{0.2} \approx 1.1972.
+    \end{align*}
+    (Hệ số chuẩn hóa toàn cục gián tiếp là $Z_1 = Z^+_1 \cdot Z^-_1 \approx 0.7748$).
+    
+    \item \textbf{Bước 5: Cập nhật phân phối biên thích ứng cho vòng sau.}
+    \begin{itemize}
+        \item \textbf{Cập nhật mẫu tích cực $S^+$:}
+        \begin{align*}
+            D^+_2(1) &= \frac{D^+_1(1) e^{-\alpha_1 h_1(x'_1)}}{Z^+_1} = \frac{0.5 \times e^{-0.5816 \times 1.0}}{0.6472} \approx 0.4318, \\
+            D^+_2(2) &= \frac{D^+_1(2) e^{-\alpha_1 h_1(x'_2)}}{Z^+_1} = \frac{0.5 \times e^{-0.5816 \times 0.6}}{0.6472} \approx 0.5450.
+        \end{align*}
+        Chuẩn hóa lại vectơ $D^+_2$ để tổng bằng 1: $D^+_2 \approx [0.4421, \ 0.5579]$.
+        
+        \item \textbf{Cập nhật mẫu tiêu cực $S^-$:}
+        \begin{align*}
+            D^-_2(1) &= \frac{D^-_1(1) e^{\alpha_1 h_1(x_1)}}{Z^-_1} = \frac{0.5 \times e^{0.5816 \times 0.4}}{1.1972} \approx 0.5270, \\
+            D^-_2(2) &= \frac{D^-_1(2) e^{\alpha_1 h_1(x_2)}}{Z^-_1} = \frac{0.5 \times e^{0.5816 \times 0.1}}{1.1972} \approx 0.4426.
+        \end{align*}
+        Chuẩn hóa lại vectơ $D^-_2$ để tổng bằng 1: $D^-_2 \approx [0.5435, \ 0.4565]$.
+    \end{itemize}
+\end{enumerate}
+Ví dụ này minh họa tường minh cơ chế cập nhật biên độc lập kích thước $m + n$ của BipartiteRankBoost, loại bỏ hoàn toàn ma trận tích cặp $mn$. Toàn bộ luồng hoạt động song song này được trực quan hóa tại Sơ đồ Hình \ref{fig:bipartite_rankboost_flowchart}.
+\end{example}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=0.8cm and 1.0cm,
+        box/.style={draw, rectangle, rounded corners, fill=blue!5, minimum width=2.8cm, minimum height=0.7cm, align=center, font=\scriptsize},
+        proc/.style={draw, rectangle, fill=orange!5, minimum width=3.2cm, minimum height=0.7cm, align=center, font=\scriptsize},
+        branch/.style={draw, rectangle, rounded corners, fill=green!5, minimum width=2.5cm, minimum height=0.7cm, align=center, font=\scriptsize},
+        arrow/.style={-latex, thick}
+    ]
+        % Entry
+        \node[box] (init) {\textbf{Khởi tạo biên phân rã} \\ $D^+_1(i) = 1/m$, $D^-_1(j) = 1/n$};
+        
+        % Split into two branches
+        \node[branch, below left=of init] (branch_pos) {\textbf{Nhánh Positive} \\ Duy trì $D^+_t(i)$};
+        \node[branch, below right=of init] (branch_neg) {\textbf{Nhánh Negative} \\ Duy trì $D^-_t(j)$};
+        
+        % Combine for selection
+        \node[proc, below=1.8cm of init] (select) {\textbf{Chọn $h_t$ tốt nhất} \\ Cực đại hóa $\E_{D^+_t}[h] - \E_{D^-_t}[h]$};
+        
+        % Compute normalizations and step
+        \node[proc, below=of select] (compute) {\textbf{Tính trọng số \& chuẩn hóa} \\ $\alpha_t = \frac{1}{2}\log(\epsilon^+_t/\epsilon^-_t)$ \\ $Z^+_t, Z^-_t$ ( closed-form )};
+        
+        % Update branches
+        \node[branch, below left=of compute] (up_pos) {\textbf{Cập nhật Positive} \\ $D^+_{t+1}(i) \propto D^+_t(i) e^{-\alpha_t h_t}$};
+        \node[branch, below right=of compute] (up_neg) {\textbf{Cập nhật Negative} \\ $D^-_{t+1}(j) \propto D^-_t(j) e^{\alpha_t h_t}$};
+        
+        % Loop connection
+        \draw[arrow] (init.south) -| (branch_pos.north);
+        \draw[arrow] (init.south) -| (branch_neg.north);
+        \draw[arrow] (branch_pos.south) |- (select.west);
+        \draw[arrow] (branch_neg.south) |- (select.east);
+        \draw[arrow] (select.south) -- (compute.north);
+        \draw[arrow] (compute.south) -| (up_pos.north);
+        \draw[arrow] (compute.south) -| (up_neg.north);
+        
+        % Feedback loop
+        \draw[arrow] (up_pos.west) -- ++(-0.6,0) |- (branch_pos.west);
+        \draw[arrow] (up_neg.east) -- ++(0.6,0) |- (branch_neg.east);
+    \end{tikzpicture}
+    \caption{Sơ đồ khối hoạt động song song thích ứng của thuật toán BipartiteRankBoost. Hai phân phối biên $D^+_t$ và $D^-_t$ được duy trì và cập nhật hoàn toàn độc lập ở hai nhánh, chỉ kết hợp tại bước chọn base ranker và tính hằng số chuẩn hóa, đảm bảo độ phức tạp tuyến tính tuyến đầu.}
+    \label{fig:bipartite_rankboost_flowchart}
+\end{figure}
+
 \subsubsection{Độ đo AUC và đường cong ROC học thuật}
 
 \begin{definition}{Diện tích dưới đường cong ROC (AUC)}{auc}
-Cho tập mẫu thử nghiệm $U$ chứa $m$ điểm tích cực $z'_1, \ldots, z'_m$ và $n$ điểm tiêu cực $z_1, \ldots, z_n$. Theo định nghĩa chính thức của giáo trình Mohri (trang 255), chỉ số **AUC** (Area Under the ROC Curve) của scoring function $h$ trên $U$ được xác định thông qua phần bù của sai số phân hạng thực nghiệm $\hat{R}(h, U)$ (với sai số $\hat{R}$ dùng quan hệ so sánh ngặt):
+Cho tập mẫu thử nghiệm $U$ chứa $m$ điểm tích cực $z'_1, \ldots, z'_m$ và $n$ điểm tiêu cực $z_1, \ldots, z_n$. Theo định nghĩa chính thức của giáo trình Mohri (trang 255), chỉ số \textbf{AUC} (Area Under the ROC Curve) của scoring function $h$ trên $U$ được xác định thông qua phần bù của sai số phân hạng thực nghiệm $\hat{R}(h, U)$ (với sai số $\hat{R}$ dùng quan hệ so sánh ngặt):
 \begin{equation}
     \mathrm{AUC}(h, U) = 1 - \hat{R}(h, U) = 1 - \frac{1}{mn} \sum_{i=1}^m \sum_{j=1}^n \mathbf{1}_{h(z'_i) < h(z_j)}.
     \label{eq:AUC_official}
@@ -168,19 +324,20 @@ Sự liên kết trực quan giữa ngưỡng phân hoạch $\theta$ cảm sinh 
 
 \begin{figure}[H]
     \centering
-    \begin{subfigure}[b]{0.48\textwidth}
+    \begin{minipage}[b]{0.48\textwidth}
         \centering
-        \begin{tikzpicture}[scale=0.85]
+        \begin{tikzpicture}[scale=0.78]
             \draw[->] (-2.5,0) -- (4.5,0) node[right, font=\small] {$h(x)$};
-            \draw[->] (0,0) -- (0,2.2) node[above, font=\small] {$p(h)$};
+            \draw[->] (0,0) -- (0,2.4);
+            \node[left=3pt, font=\small] at (0,2.2) {$p(h)$};
             
             \draw[red, thick, smooth, samples=50, domain=-2.2:2.2] plot (\x, {2.0*exp(-\x*\x/1.2)});
-            \node[red, font=\small] at (-1.2,1.2) {Lớp $\Xcal^-$};
+            \node[red, font=\small] at (-1.6,1.4) {Lớp $\Xcal^-$};
             
             \draw[blue, thick, smooth, samples=50, domain=0:4.2] plot (\x, {2.0*exp(-(\x-2.0)*(\x-2.0)/1.2)});
-            \node[blue, font=\small] at (3.2,1.2) {Lớp $\Xcal^+$};
+            \node[blue, font=\small] at (3.6,1.4) {Lớp $\Xcal^+$};
             
-            \draw[dashed, black, very thick] (0.8,0) -- (0.8,2.2) node[above, font=\small] {Ngưỡng $\theta$};
+            \draw[dashed, black, very thick] (0.8,0) -- (0.8,2.2) node[above right=1pt, font=\small] {Ngưỡng $\theta$};
             
             \fill[red, opacity=0.2] (0.8,0) -- plot[domain=0.8:2.2] (\x, {2.0*exp(-\x*\x/1.2)}) -- (2.2,0) -- cycle;
             \fill[blue, opacity=0.2] (0.8,0) -- plot[domain=0.8:4.2] (\x, {2.0*exp(-(\x-2.0)*(\x-2.0)/1.2)}) -- (4.2,0) -- cycle;
@@ -188,35 +345,37 @@ Sự liên kết trực quan giữa ngưỡng phân hoạch $\theta$ cảm sinh 
             \node[red, font=\tiny] at (1.1,0.2) {FP};
             \node[blue, font=\tiny] at (2.0,0.4) {TP};
         \end{tikzpicture}
-        \caption{Ngưỡng phân hoạch $\theta$ trên scores.}
-    \end{subfigure}
+        \par\smallskip
+        {\small (a) Ngưỡng phân hoạch $\theta$ trên scores.}
+    \end{minipage}
     \hfill
-    \begin{subfigure}[b]{0.48\textwidth}
+    \begin{minipage}[b]{0.48\textwidth}
         \centering
-        \begin{tikzpicture}[scale=0.85]
+        \begin{tikzpicture}[scale=0.78]
             \draw[->] (0,0) -- (3.5,0) node[right, font=\small] {FPR};
-            \draw[->] (0,0) -- (0,3.5) node[above, font=\small] {TPR};
+            \draw[->] (0,0) -- (0,3.5) node[above left=1pt, font=\small] {TPR};
             
             \fill[blue!10] (0,0) .. controls (0.2,2.0) and (1.0,3.0) .. (3.0,3.0) -- (3.0,0) -- cycle;
             
             \draw[blue, very thick] (0,0) .. controls (0.2,2.0) and (1.0,3.0) .. (3.0,3.0);
-            \node[blue, font=\small] at (1.5,2.4) {ROC Curve};
+            \node[blue, font=\small, fill=white, inner sep=1.5pt] at (1.45,2.45) {ROC Curve};
             
             \draw[dashed, gray] (0,0) -- (3.0,3.0);
-            \node[gray, rotate=45, font=\tiny] at (1.7,1.5) {Random (AUC = 0.5)};
+            \node[gray, rotate=45, font=\tiny, below right=2pt] at (1.5,1.5) {Random (AUC = 0.5)};
             
             \draw (3.0,0.05) -- (3.0,-0.05) node[below, font=\small] {1.0};
             \draw (0.05,3.0) -- (-0.05,3.0) node[left, font=\small] {1.0};
             \node[blue, font=\small] at (1.8,0.8) {AUC};
         \end{tikzpicture}
-        \caption{Đường cong ROC tương ứng.}
-    \end{subfigure}
+        \par\smallskip
+        {\small (b) Đường cong ROC tương ứng.}
+    \end{minipage}
     \caption{Trực quan hoá Bipartite Ranking. (a) Ngưỡng $\theta$ phân chia scoring function cảm sinh False Positive (FP) và True Positive (TP). (b) Diện tích tô xanh nhạt dưới đường cong ROC chính là chỉ số AUC.}
     \label{fig:bipartite_roc_concept}
 \end{figure}
 
 \begin{example}[Tính AUC bằng tay]
-Giả sử có 3 mẫu tích cực với scores $(0.9, 0.7, 0.4)$ và 3 mẫu tiêu cực với scores $(0.8, 0.5, 0.3)$. Để tính toán theo thuật toán của giáo trình Mohri (trang 256), ta tiến hành sắp xếp mảng gộp theo thứ tự **tăng dần (increasing order)**:
+Giả sử có 3 mẫu tích cực với scores $(0.9, 0.7, 0.4)$ và 3 mẫu tiêu cực với scores $(0.8, 0.5, 0.3)$. Để tính toán theo thuật toán của giáo trình Mohri (trang 256), ta tiến hành sắp xếp mảng gộp theo thứ tự \textbf{tăng dần (increasing order)}:
 \[
     \underbrace{0.3}_{-}, \underbrace{0.4}_{+}, \underbrace{0.5}_{-}, \underbrace{0.7}_{+}, \underbrace{0.8}_{-}, \underbrace{0.9}_{+}.
 \]
@@ -236,7 +395,32 @@ Tổng số cặp tích dương-tiêu cực: $mn = 3 \times 3 = 9$. Chỉ số A
 Kết quả này khớp chính xác tuyệt đối với việc liệt kê và đếm thủ công các cặp $(z'_i, z_j)$ thỏa mãn $h(z'_i) \ge h(z_j)$, bao gồm: $(0.9, 0.8)$, $(0.9, 0.5)$, $(0.9, 0.3)$, $(0.7, 0.5)$, $(0.7, 0.3)$ và $(0.4, 0.3)$ (tổng cộng $6$ cặp).
 \end{example}
 
-\begin{extension}
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[scale=0.95]
+        % Draw array slots
+        \foreach \x/\label/\val/\sign in {0/0.3/-/-, 1.8/0.4/+/+, 3.6/0.5/-/-, 5.4/0.7/+/+, 7.2/0.8/-/-, 9.0/0.9/+/+} {
+            \draw[fill=gray!5, draw=black, thick] (\x,0) rectangle (\x+1.5,0.8);
+            \node at (\x+0.75,0.4) [font=\small] {$\val$ (\sign)};
+            \node at (\x+0.75,1.1) [font=\tiny, color=gray] {score: \label};
+        }
+        
+        % Arrow of scanning
+        \draw[ultra thick, ->, >=stealth, green!60!black] (-0.5,-0.6) -- (11.0,-0.6) node[right, font=\tiny\bfseries] {Quét từ trái sang phải};
+        
+        % State tracing labels below
+        \node at (0.75,-1.2) [font=\tiny, align=center] {$n_{\text{neg}}=1$ \\ $r=0$};
+        \node at (2.55,-1.2) [font=\tiny, align=center] {$n_{\text{neg}}=1$ \\ $r=1$};
+        \node at (4.35,-1.2) [font=\tiny, align=center] {$n_{\text{neg}}=2$ \\ $r=1$};
+        \node at (6.15,-1.2) [font=\tiny, align=center] {$n_{\text{neg}}=2$ \\ $r=3$};
+        \node at (7.95,-1.2) [font=\tiny, align=center] {$n_{\text{neg}}=3$ \\ $r=3$};
+        \node at (9.75,-1.2) [font=\tiny, align=center] {$n_{\text{neg}}=3$ \\ $r=6$};
+    \end{tikzpicture}
+    \caption{Trực quan hóa thuật toán quét tuyến tính $\mathcal{O}(m+n)$ để đếm AUC trên mảng đã sắp xếp tăng dần. Mỗi khi gặp mẫu tiêu cực ($-$), ta tăng biến đếm $n_{\text{neg}}$. Mỗi khi gặp mẫu tích cực ($+$), ta cộng tích lũy số lượng mẫu âm đã duyệt $n_{\text{neg}}$ vào tổng số cặp đúng $r$. Điều này đảm bảo tính đúng đắn và tốc độ tối ưu.}
+    \label{fig:linear_auc_scan}
+\end{figure}
+
+\begin{morong}
 \textbf{Chứng minh Bổ đề phụ: Hướng giảm nhanh nhất của Bipartite RankBoost (Directional Derivative).}
 
 Trong Bipartite RankBoost, mỗi vòng boosting tìm kiếm một base ranker $h_t$ thỏa mãn tối đa hóa hiệu các kỳ vọng $\E_{D^+_t}[h(x')] - \E_{D^-_t}[h(x)]$. Ở đây chúng tôi trình bày chứng minh toán học đầy đủ chỉ ra rằng việc chọn $h_t$ như trên chính là hướng giảm nhanh nhất (cực tiểu directional derivative) của hàm loss bipartite.
@@ -255,30 +439,32 @@ Tính trực tiếp bằng cách lấy đạo hàm riêng theo $\eta$ tại $\et
     F'(\bm{\alpha}_{t-1}; e_k) = -\sum_{i=1}^m \sum_{j=1}^n \bigl(h_k(x'_i) - h_k(x_j)\bigr) \exp\Bigl(-\bigl[f_{t-1}(x'_i) - f_{t-1}(x_j)\bigr]\Bigr).
 \]
 
-Sử dụng đẳng thức phân phối \eqref{eq:D_t1_identity} cho cặp $(i,j)$ tại vòng $t$ với hệ số chuẩn hoá tích lũy $Z_{\text{accum}} = mn \prod_{s=1}^{t-1} Z_s$:
-\[
-    D_t(i, j) = \frac{\exp\bigl(-[f_{t-1}(x'_i) - f_{t-1}(x_j)]\bigr)}{Z_{\text{accum}}} \implies \exp\Bigl(-\bigl[f_{t-1}(x'_i) - f_{t-1}(x_j)\bigr]\Bigr) = Z_{\text{accum}} D_t(i, j).
-\]
+\begin{align}
+    D_t(i, j) &= \frac{\exp\bigl(-[f_{t-1}(x'_i) - f_{t-1}(x_j)]\bigr)}{Z_{\text{accum}}} \nonumber \\
+    \implies \exp\Bigl(-\bigl[f_{t-1}(x'_i) - f_{t-1}(x_j)\bigr]\Bigr) &= Z_{\text{accum}} D_t(i, j).
+    \label{eq:bipartite_d_accum}
+\end{align}
 
-Thay vào biểu thức đạo hàm:
 \begin{align*}
-    F'(\bm{\alpha}_{t-1}; e_k) &= -Z_{\text{accum}} \sum_{i=1}^m \sum_{j=1}^n D_t(i, j) \bigl(h_k(x'_i) - h_k(x_j)\bigr) \\
+    &F'(\bm{\alpha}_{t-1}; e_k) \\
+    &= -Z_{\text{accum}} \sum_{i=1}^m \sum_{j=1}^n D_t(i, j) \bigl(h_k(x'_i) - h_k(x_j)\bigr) \\
     &= -Z_{\text{accum}} \sum_{i=1}^m \sum_{j=1}^n D^+_t(i) D^-_t(j) \bigl(h_k(x'_i) - h_k(x_j)\bigr) \quad (\text{do phân phối tách độc lập}) \\
     &= -Z_{\text{accum}} \left[ \sum_{i=1}^m D^+_t(i) h_k(x'_i) \sum_{j=1}^n D^-_t(j) - \sum_{i=1}^m D^+_t(i) \sum_{j=1}^n D^-_t(j) h_k(x_j) \right].
 \end{align*}
 
 Do $D^+_t$ và $D^-_t$ là các phân phối xác suất hợp lệ nên tổng của chúng bằng $1$: $\sum_{i=1}^m D^+_t(i) = 1$ và $\sum_{j=1}^n D^-_t(j) = 1$. Thay các tổng này vào:
 \begin{align*}
-    F'(\bm{\alpha}_{t-1}; e_k) &= -Z_{\text{accum}} \left[ \sum_{i=1}^m D^+_t(i) h_k(x'_i) \cdot 1 - 1 \cdot \sum_{j=1}^n D^-_t(j) h_k(x_j) \right] \\
+    &F'(\bm{\alpha}_{t-1}; e_k) \\
+    &= -Z_{\text{accum}} \left[ \sum_{i=1}^m D^+_t(i) h_k(x'_i) \cdot 1 - 1 \cdot \sum_{j=1}^n D^-_t(j) h_k(x_j) \right] \\
     &= -Z_{\text{accum}} \left[ \E_{i \sim D^+_t}[h_k(x'_i)] - \E_{j \sim D^-_t}[h_k(x_j)] \right].
 \end{align*}
 
-Để cực tiểu hóa đạo hàm theo hướng $F'(\bm{\alpha}_{t-1}; e_k)$ (tức là đi theo hướng giảm nhanh nhất của hàm loss), ta cần **cực đại hóa hiệu các kỳ vọng**:
+Để cực tiểu hóa đạo hàm theo hướng $F'(\bm{\alpha}_{t-1}; e_k)$ (tức là đi theo hướng giảm nhanh nhất của hàm loss), ta cần \textbf{cực đại hóa hiệu các kỳ vọng}:
 \[
     \E_{i \sim D^+_t}[h_k(x'_i)] - \E_{j \sim D^-_t}[h_k(x_j)] = \epsilon^+_t - \epsilon^-_t.
 \]
 Đây chính xác là tiêu chí chọn base ranker $h_t$ trong thuật toán BipartiteRankBoost, hoàn thiện chứng minh toán học cho thuật toán tối ưu.
-\end{extension}
+\end{morong}
 
 \subsubsection{Mối liên hệ học thuật AdaBoost $\leftrightarrow$ RankBoost}
 
@@ -291,6 +477,30 @@ Véc-tơ gradient của hai mô hình có quan hệ hữu cơ:
     \nabla F_{\text{RankBoost}} = F^- \nabla F_{\text{AdaBoost}} + (F^+ - F^-)\nabla F^-.
     \label{eq:grad_relation}
 \end{equation}
+
+\begin{proof}[Chứng minh quan hệ Gradient]
+Áp dụng quy tắc đạo hàm tích cho hàm mục tiêu RankBoost được tách nhân tử $F_{\text{RankBoost}} = F^+ \cdot F^-$:
+\begin{equation}
+    \nabla F_{\text{RankBoost}} = \nabla (F^+ \cdot F^-) = F^- \nabla F^+ + F^+ \nabla F^-.
+    \label{eq:grad_step1}
+\end{equation}
+Đồng thời, theo định nghĩa của AdaBoost:
+\[
+    F_{\text{AdaBoost}} = F^+ + F^- \implies \nabla F_{\text{AdaBoost}} = \nabla F^+ + \nabla F^-.
+\]
+Từ đó ta rút ra véc-tơ gradient của hàm $F^+$:
+\begin{equation}
+    \nabla F^+ = \nabla F_{\text{AdaBoost}} - \nabla F^-.
+    \label{eq:grad_step2}
+\end{equation}
+Thế công thức \eqref{eq:grad_step2} vào phương trình \eqref{eq:grad_step1}, ta thu được:
+\begin{align*}
+    \nabla F_{\text{RankBoost}} &= F^- \left( \nabla F_{\text{AdaBoost}} - \nabla F^- \right) + F^+ \nabla F^- \\
+    &= F^- \nabla F_{\text{AdaBoost}} - F^- \nabla F^- + F^+ \nabla F^- \\
+    &= F^- \nabla F_{\text{AdaBoost}} + (F^+ - F^-) \nabla F^-.
+\end{align*}
+Hệ thức gradient được chứng minh hoàn tất và chặt chẽ.
+\end{proof}
 
 \subsubsection*{Đẳng thức và tính chất giới hạn học thuật}
 
@@ -316,37 +526,37 @@ Thế hệ thức cân bằng biên $F^+ = F^-$ vào phương trình gradient li
 \]
 Điều này chứng tỏ điểm tiệm cận của AdaBoost cũng chính là cực trị tiệm cận của RankBoost.
 
-Mặc dù AdaBoost có năng lực tối ưu hóa RankBoost gián tiếp thông qua mối quan hệ toán học này và thường đạt hiệu năng xếp hạng rất tốt trên thực tế, giáo trình Mohri (trang 255) chỉ ra rằng **RankBoost có xu hướng hội tụ nhanh hơn** và đạt chỉ số ranking tối ưu chỉ với ít vòng lặp boosting hơn so với AdaBoost.
+Mặc dù AdaBoost có năng lực tối ưu hóa RankBoost gián tiếp thông qua mối quan hệ toán học này và thường đạt hiệu năng xếp hạng rất tốt trên thực tế, giáo trình Mohri (trang 255) chỉ ra rằng \textbf{RankBoost có xu hướng hội tụ nhanh hơn} và đạt chỉ số ranking tối ưu chỉ với ít vòng lặp boosting hơn so với AdaBoost.
 \end{tcolorbox}
 
-\begin{extension}
+\begin{morong}
 \textbf{Phát biểu nghiêm ngặt về chuỗi Infimum trong không gian phi tuyến}
 
 Giáo trình Mohri đưa ra phát biểu phân tích tiệm cận hết sức cẩn trọng bằng cách sử dụng giới hạn của chuỗi giả thuyết $(f_s)$ và giá trị infimum ($\inf$), thay vì giả định sự tồn tại của một điểm cực tiểu cục bộ duy nhất (minimizer). 
 
 Lý do là trên tập dữ liệu phân hoạch phi tuyến, hàm tổn thất exponential loss của boosting có xu hướng giảm dần về infimum khi các trọng số $\alpha_t$ tiến ra vô cùng (tương tự như hiện tượng phân tách hoàn hảo lề của SVM). Do đó, điểm tối ưu thực tế có thể không tồn tại dưới dạng một véc-tơ hữu hạn, và việc phát biểu bằng chuỗi tiệm cận toán học là bắt buộc để đảm bảo tính đúng đắn và chặt chẽ của lý thuyết chứng minh.
-\end{extension}
+\end{morong}
 
-\begin{extension}
+\begin{morong}
 \textbf{Hạn chế học thuật của AUC: Ví dụ phản chứng về sự tương đương hiệu năng.}
 
-Mặc dù AUC là một chỉ số cực kỳ phổ biến trong bipartite ranking, nó có một hạn chế học thuật rất lớn: **AUC tính trung bình trên toàn bộ đường cong ROC**, điều này có thể dẫn đến việc đánh giá sai lệch hiệu năng trong thực tế.
+Mặc dù AUC là một chỉ số cực kỳ phổ biến trong bipartite ranking, nó có một hạn chế học thuật rất lớn: \textbf{AUC tính trung bình trên toàn bộ đường cong ROC}, điều này có thể dẫn đến việc đánh giá sai lệch hiệu năng trong thực tế.
 
 Xét hai mô hình xếp hạng $A$ và $B$ trên cùng một tập dữ liệu. Đường cong ROC của chúng giao nhau:
 \begin{itemize}
-    \item **Mô hình A**: Đạt True Positive Rate (TPR) rất cao khi False Positive Rate (FPR) nhỏ (ví dụ: TPR = $0.70$ tại FPR = $0.05$), nhưng tăng chậm ở giai đoạn sau.
-    \item **Mô hình B**: Đạt TPR rất thấp khi FPR nhỏ (ví dụ: TPR = $0.20$ tại FPR = $0.05$), nhưng tăng rất nhanh ở giai đoạn sau.
+    \item \textbf{Mô hình A}: Đạt True Positive Rate (TPR) rất cao khi False Positive Rate (FPR) nhỏ (ví dụ: TPR = $0.70$ tại FPR = $0.05$), nhưng tăng chậm ở giai đoạn sau.
+    \item \textbf{Mô hình B}: Đạt TPR rất thấp khi FPR nhỏ (ví dụ: TPR = $0.20$ tại FPR = $0.05$), nhưng tăng rất nhanh ở giai đoạn sau.
 \end{itemize}
 Giả sử cả hai mô hình đều có diện tích dưới đường cong ROC bằng nhau: $\text{AUC}(A) = \text{AUC}(B) = 0.80$. 
 
 \textbf{Ví dụ phản chứng cho sự tương đương hiệu năng:}
 \begin{enumerate}
-    \item Trong bài toán **truy hồi thông tin (Information Retrieval / Search Engine)**: Người dùng chỉ quan tâm đến các kết quả ở trang đầu tiên (tương ứng với vùng FPR cực kỳ nhỏ ở góc dưới bên trái của đường ROC). Tại vùng này, mô hình $A$ vượt trội hoàn toàn so với mô hình $B$ (TPR $0.70$ so với $0.20$). Tuy nhiên, chỉ số AUC của chúng lại bằng nhau ($0.80$), khiến ta lầm tưởng hai mô hình có giá trị sử dụng ngang nhau.
-    \item Trong bài toán **phát hiện giao dịch gian lận (Fraud Detection)**: Nhân viên điều tra chỉ có thể kiểm tra một số lượng rất ít giao dịch nghi vấn mỗi ngày do giới hạn nguồn lực. Do đó, mô hình phải có khả năng gom các giao dịch gian lận lên top đầu của danh sách (FPR cực thấp). Mô hình $A$ là sự lựa chọn duy nhất khả thi, trong khi mô hình $B$ hoàn toàn vô dụng trên thực tế.
+    \item Trong bài toán \textbf{truy hồi thông tin (Information Retrieval / Search Engine)}: Người dùng chỉ quan tâm đến các kết quả ở trang đầu tiên (tương ứng với vùng FPR cực kỳ nhỏ ở góc dưới bên trái của đường ROC). Tại vùng này, mô hình $A$ vượt trội hoàn toàn so với mô hình $B$ (TPR $0.70$ so với $0.20$). Tuy nhiên, chỉ số AUC của chúng lại bằng nhau ($0.80$), khiến ta lầm tưởng hai mô hình có giá trị sử dụng ngang nhau.
+    \item Trong bài toán \textbf{phát hiện giao dịch gian lận (Fraud Detection)}: Nhân viên điều tra chỉ có thể kiểm tra một số lượng rất ít giao dịch nghi vấn mỗi ngày do giới hạn nguồn lực. Do đó, mô hình phải có khả năng gom các giao dịch gian lận lên top đầu của danh sách (FPR cực thấp). Mô hình $A$ là sự lựa chọn duy nhất khả thi, trong khi mô hình $B$ hoàn toàn vô dụng trên thực tế.
 \end{enumerate}
 
-Sự bất cập này của chỉ số AUC là động lực chính để các nhà nghiên cứu chuyển sang sử dụng các tiêu chí xếp hạng khác tập trung vào phần đầu danh sách, chẳng hạn như **Normalized Discounted Cumulative Gain (NDCG)** hoặc chỉ số **Partial AUC** (chỉ tính diện tích đường ROC từ FPR = $0$ đến một ngưỡng $\beta$ cụ thể).
-\end{extension}
+Sự bất cập này của chỉ số AUC là động lực chính để các nhà nghiên cứu chuyển sang sử dụng các tiêu chí xếp hạng khác tập trung vào phần đầu danh sách, chẳng hạn như \textbf{Normalized Discounted Cumulative Gain (NDCG)} hoặc chỉ số \textbf{Partial AUC} (chỉ tính diện tích đường ROC từ FPR = $0$ đến một ngưỡng $\beta$ cụ thể).
+\end{morong}
 
 % ── KHẢO SÁT MỐI LIÊN HỆ LÝ THUYẾT ────────────────────────────────────────────
 \subsubsection{Khảo sát mối liên hệ học thuật với các chương khác trong giáo trình}
@@ -354,18 +564,95 @@ Sự bất cập này của chỉ số AUC là động lực chính để các n
 
 Để hoàn thành trọn vẹn Yêu cầu số 5 của đề tài đồ án về việc ``Khảo sát mối liên hệ giữa các nội dung lý thuyết'', chúng tôi tiến hành phân tích sâu sắc các kết nối toán học hữu cơ giữa nội dung phân hạng (Chương 10) với các chương nền tảng khác trong cuốn sách \textit{Foundations of Machine Learning}:
 
-\paragraph{1. RankBoost $\leftrightarrow$ AdaBoost (Kết nối với Chương 7 - Boosting)}
-* **Sự thống nhất về hàm tổn thất**: RankBoost thực chất là sự mở rộng của thuật toán AdaBoost (Chương 7) từ việc học trên từng điểm mẫu đơn lẻ (pointwise) sang học trên các cặp thực thể (pairwise). Cả hai thuật toán đều cực tiểu hóa cận trên lồi dạng hàm mũ ($e^{-u}$) của hàm tổn thất gốc (Zero-One loss).
-* **Sự tương đương về mặt thuật toán**: Quy trình tối ưu của RankBoost chính là phương pháp hạ độ dốc tọa độ (Coordinate Descent) trên hàm mục tiêu lồi $F(\bm{\alpha})$, hoàn toàn tương thích với cơ chế tối ưu của AdaBoost. Hơn nữa, phân tích tiệm cận của Mohri chỉ ra rằng nếu tập base rankers chứa hàm hằng, AdaBoost nhị phân chuẩn cũng sẽ hội tụ về điểm tối ưu tiệm cận của RankBoost trong không gian bipartite.
+\paragraph{1. Bipartite RankBoost $\leftrightarrow$ AdaBoost (liên hệ riêng của Mục 10.5.1)}
+\begin{itemize}
+    \item \textbf{Không lặp lại liên hệ tổng quát}: Phần RankBoost đã giải thích sự tương tự giữa RankBoost và AdaBoost ở mức boosting/exponential loss. Ở đây, giáo trình xét một quan hệ chặt hơn chỉ xuất hiện trong bipartite ranking: mục tiêu RankBoost phân rã thành tích của hai thành phần lớp dương và lớp âm, còn mục tiêu AdaBoost tương ứng là tổng của hai thành phần đó:
+    \[
+        F_{\mathrm{RankBoost}}(\bm{\alpha})
+        =
+        F^+(\bm{\alpha})F^-(\bm{\alpha}),
+        \qquad
+        F_{\mathrm{AdaBoost}}(\bm{\alpha})
+        =
+        F^+(\bm{\alpha})+F^-(\bm{\alpha}).
+    \]
+    \item \textbf{Quan hệ gradient}: Từ công thức trên, đạo hàm của mục tiêu RankBoost thỏa
+    \[
+        \nabla F_{\mathrm{RankBoost}}(\bm{\alpha})
+        =
+        F^-(\bm{\alpha})\nabla F^+(\bm{\alpha})
+        +
+        F^+(\bm{\alpha})\nabla F^-(\bm{\alpha}).
+    \]
+    Vì $\nabla F_{\mathrm{AdaBoost}}=\nabla F^+ + \nabla F^-$, điều kiện tối ưu của AdaBoost có thể kéo theo điều kiện dừng của RankBoost trong những trường hợp cân bằng phù hợp, đặc biệt khi lớp weak hypotheses chứa hàm hằng như phân tích trong sách.
+    \item \textbf{Ý nghĩa}: AdaBoost có thể tạo ra scoring function có chất lượng ranking tốt trong bipartite setting, nhưng RankBoost vẫn là thuật toán tối ưu trực tiếp tiêu chí pairwise. Vì vậy nhận xét của sách là: AdaBoost liên hệ chặt với RankBoost trong trường hợp bipartite, song RankBoost thường đạt mục tiêu ranking với ít vòng lặp hơn.
+\end{itemize}
 
 \paragraph{2. Chặn sai số RankBoost $\leftrightarrow$ Rademacher Complexity (Kết nối với Chương 3 - Generalization Bounds)}
-* **Cơ sở đo lường năng lực học tập**: Sai số phân hạng thực tế $R(h)$ được chặn trên thông qua Rademacher Complexity của không gian giả thuyết $\Hcal$ theo Định lý 10.2 và Hệ quả 10.4. Độ phức tạp Rademacher (định nghĩa tại Chương 3) đóng vai trò đo lường khả năng khớp nhiễu ngẫu nhiên của tập giả thuyết $\Hcal$.
-* **Sự phân tách Rademacher trong Bipartite**: Khác với phân loại nhị phân thông thường (chỉ có một số hạng Rademacher trên tập mẫu chung), chặn lề phân hạng nhị phân phân tách độ phức tạp Rademacher thành hai thành phần riêng biệt $R^{D^+}_m(\Hcal)$ và $R^{D^-}_n(\Hcal)$ tương ứng trên không gian mẫu dương $S^+$ (kích thước $m$) và mẫu âm $S^-$ (kích thước $n$). Đây là điểm tinh tế toán học cực kỳ quan trọng: trong khi Corollary 10.4 tổng quát dùng chung kích thước mẫu $m$ cho cả hai số hạng Rademacher (do chọn mẫu theo cặp), thì trong bipartite setting cụ thể, ta có $m$ mẫu tích cực độc lập từ $D^+$ và $n$ mẫu tiêu cực độc lập từ $D^-$, dẫn đến hai Rademacher terms sử dụng độc lập hai sample sizes khác nhau là $m$ và $n$.
+\begin{itemize}
+    \item \textbf{Cơ sở đo lường năng lực học tập}: Sai số phân hạng thực tế $R(h)$ được chặn trên thông qua Rademacher Complexity của không gian giả thuyết $\Hcal$ theo Định lý 10.2 và Hệ quả 10.4. Độ phức tạp Rademacher (định nghĩa tại Chương 3) đóng vai trò đo lường khả năng khớp nhiễu ngẫu nhiên của tập giả thuyết $\Hcal$.
+    \item \textbf{Sự phân tách Rademacher trong Bipartite}: Khác với phân loại nhị phân thông thường (chỉ có một số hạng Rademacher trên tập mẫu chung), chặn lề phân hạng nhị phân phân tách độ phức tạp Rademacher thành hai thành phần riêng biệt $R^{D^+}_m(\Hcal)$ và $R^{D^-}_n(\Hcal)$ tương ứng trên không gian mẫu dương $S^+$ (kích thước $m$) và mẫu âm $S^-$ (kích thước $n$). Đây là điểm tinh tế toán học cực kỳ quan trọng: trong khi Corollary 10.4 tổng quát dùng chung kích thước mẫu $m$ cho cả hai số hạng Rademacher (do chọn mẫu theo cặp), thì trong bipartite setting cụ thể, ta có $m$ mẫu tích cực độc lập từ $D^+$ và $n$ mẫu tiêu cực độc lập từ $D^-$, dẫn đến hai Rademacher terms sử dụng độc lập hai sample sizes khác nhau là $m$ và $n$.
+\end{itemize}
 
-\paragraph{3. Bipartite Setting $\leftrightarrow$ Binary Classification (Kết nối với Chương 3 \& 7)}
-* **Cực tiểu sai số phân hạng bằng phân loại nhị phân**: Bipartite ranking có thể được rút gọn một phần về bài toán phân loại nhị phân bằng cách gán ngưỡng tuyệt đối $\theta$. Sai số phân hạng thực tế $R(h)$ có thể được chặn trên thông qua sai số phân loại nhị phân:
-  \begin{equation}
-      R(h) \leq 2 R_{\text{class}}(h).
-  \end{equation}
-  Đây là kết quả lý thuyết quan trọng được nêu tại **Bài tập 10.7 (Exercise 10.7)** của giáo trình Mohri, chứng minh rằng một bộ phân lớp hoạt động tốt chắc chắn sẽ đảm bảo sai số phân hạng thấp.
-* **Sự ưu việt của phân hạng trên dữ liệu mất cân bằng**: Khác với phân loại nhị phân (nơi các chỉ số Accuracy hay F1-score cực kỳ nhạy cảm và dễ bị bóp méo khi tập dữ liệu bị mất cân bằng nghiêm trọng), độ đo phân hạng AUC hoàn toàn bất biến (invariant) trước sự thay đổi tỷ lệ số lượng giữa mẫu dương ($m$) và mẫu âm ($n$). Điều này chứng minh tại sao phương pháp phân hạng bipartite (như BipartiteRankBoost) luôn được ưu tiên lựa chọn thay thế cho classification trong các ứng dụng thực tế mất cân bằng dữ liệu như Search Engine hay Fraud Detection.
+\paragraph{3. Bipartite Setting $\leftrightarrow$ Binary Classification (Exercise 10.7)}
+\begin{itemize}
+    \item \textbf{Classifier tốt kéo theo ranking tốt}: Gọi $c:\Xcal\to\{-1,+1\}$ là một binary classifier. Ta dùng score $s_c(x)=c(x)$ để xếp hạng, tức điểm được dự đoán $+1$ đứng trước điểm được dự đoán $-1$. Nếu sai số phân loại cân bằng của $c$ là
+    \[
+        \begin{aligned}
+        R_{\mathrm{class}}(c)
+        &=
+        \frac{1}{2}\varepsilon_+ + \frac{1}{2}\varepsilon_-,\\
+        \varepsilon_+
+        &=
+        \Prob_{x^+\sim D^+}[c(x^+)=-1],\\
+        \varepsilon_-
+        &=
+        \Prob_{x^-\sim D^-}[c(x^-) = +1].
+        \end{aligned}
+    \]
+    thì sai số ranking do $c$ cảm sinh thỏa
+    \begin{equation}
+        R_{\mathrm{rank}}(c) \leq R_{\mathrm{class}}(c).
+        \label{eq:exercise_107_rank_class}
+    \end{equation}
+    Đây mới là nội dung phù hợp với \textbf{Exercise 10.7}: nếu binary classifier có error $\varepsilon$, ranking mà nó cảm sinh có error không quá $\varepsilon$.
+
+    \begin{proof}[Chứng minh chi tiết Exercise 10.7]
+    Lấy độc lập $x^+\sim D^+$ và $x^-\sim D^-$. Với score $s_c(x)=c(x)$, cặp $(x^+,x^-)$ chỉ bị xếp sai theo strict ranking loss khi mẫu dương bị dự đoán âm và mẫu âm bị dự đoán dương:
+    \[
+        s_c(x^+) < s_c(x^-)
+        \Longleftrightarrow
+        c(x^+)=-1 \ \text{và}\ c(x^-)=+1.
+    \]
+    Do hai mẫu được lấy độc lập từ $D^+$ và $D^-$, ta có
+    \[
+        R_{\mathrm{rank}}(c)
+        =
+        \Prob[c(x^+)=-1,\ c(x^-)=+1]
+        =
+        \varepsilon_+\varepsilon_-.
+    \]
+    Vì $0\leq \varepsilon_+,\varepsilon_-\leq 1$ nên
+    \[
+        \varepsilon_+\varepsilon_-
+        \leq
+        \frac{\varepsilon_+ + \varepsilon_-}{2}
+        =
+        R_{\mathrm{class}}(c).
+    \]
+    Suy ra \eqref{eq:exercise_107_rank_class}. Nếu quy ước tie trong AUC/ranking loss được tính là nửa lỗi, ta còn có
+    \[
+        R_{\mathrm{rank}}^{1/2}(c)
+        =
+        \varepsilon_+\varepsilon_-
+        +
+        \frac{1}{2}\big((1-\varepsilon_+)\varepsilon_-+\varepsilon_+(1-\varepsilon_-)\big)
+        =
+        R_{\mathrm{class}}(c),
+    \]
+    nên kết luận ``không vượt quá sai số phân loại'' vẫn giữ nguyên.
+
+    Chiều ngược không đúng. Ví dụ, giả sử mọi mẫu dương có score $s(x^+)=2$ và mọi mẫu âm có score $s(x^-)=1$. Ranking error bằng $0$ vì mọi mẫu dương đều đứng trên mọi mẫu âm. Nhưng nếu dùng ngưỡng phân loại $\theta=3$, tất cả các điểm đều bị gán nhãn âm, nên sai số phân loại cân bằng bằng $1/2$. Vì vậy ranking tốt không tự động suy ra classification tốt nếu chưa chọn được ngưỡng phân loại phù hợp.
+    \end{proof}
+\item \textbf{Sự ưu việt của phân hạng trên dữ liệu mất cân bằng}: Khác với phân loại nhị phân (nơi các chỉ số Accuracy hay F1-score cực kỳ nhạy cảm và dễ bị bóp méo khi tập dữ liệu bị mất cân bằng nghiêm trọng), độ đo phân hạng AUC hoàn toàn bất biến (invariant) trước sự thay đổi tỷ lệ số lượng giữa mẫu dương ($m$) và mẫu âm ($n$). Điều này chứng minh tại sao phương pháp phân hạng bipartite (như BipartiteRankBoost) luôn được ưu tiên lựa chọn thay thế cho classification trong các ứng dụng thực tế mất cân bằng dữ liệu như Search Engine hay Fraud Detection.
+\end{itemize}

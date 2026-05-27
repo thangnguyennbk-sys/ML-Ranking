@@ -28,6 +28,54 @@ Chúng tôi ký hiệu rút gọn $\epsilon^+_t \equiv \epsilon^{+1}_t$ (tỷ l�
     \end{equation}
 \end{itemize}
 
+\begin{example}[Tính toán nhanh các đại lượng mẫu biên và Edge]
+Giả sử tại một vòng lặp $t$, ta có tập dữ liệu gồm $5$ cặp preference huấn luyện có cùng trọng số phân phối đều: $D_t(i) = 0.2$ với mọi $i \in [5]$. Xét một base ranker yếu $h_t$ cho kết quả so sánh trên $5$ cặp này như sau:
+\begin{itemize}
+    \item Xếp hạng đúng trên 3 cặp: $y_i(h_t(x'_i) - h_t(x_i)) = +1$ (với $i \in \{1, 3, 4\}$).
+    \item Xếp hạng sai trên 1 cặp: $y_i(h_t(x'_i) - h_t(x_i)) = -1$ (với $i = 2$).
+    \item Không phân biệt được trên 1 cặp: $y_i(h_t(x'_i) - h_t(x_i)) = 0$ (với $i = 5$).
+\end{itemize}
+Áp dụng định nghĩa từ công thức \eqref{eq:epsilon_def}, ta có các biến trọng số tích lũy:
+\begin{itemize}
+    \item $\epsilon^+_t = 0.2 + 0.2 + 0.2 = 0.6$ (tổng trọng số cặp đúng).
+    \item $\epsilon^-_t = 0.2$ (tổng trọng số cặp sai).
+    \item $\epsilon^0_t = 0.2$ (tổng trọng số cặp không phân biệt).
+\end{itemize}
+Hiệu số trọng số xếp đúng và xếp sai là $\epsilon^+_t - \epsilon^-_t = 0.4$. Biên danh nghĩa (edge) của base ranker $h_t$ thu được:
+\[
+    \gamma_t = \frac{\epsilon^+_t - \epsilon^-_t}{2} = \frac{0.6 - 0.2}{2} = 0.2 > 0.
+\]
+Nếu cận lề tối thiểu của bài toán là $\gamma = 0.1$, ta luôn có $\gamma_t \ge \gamma > 0$, thỏa mãn hoàn hảo \textbf{Weak Ranking Assumption} (Học tốt hơn ngẫu nhiên). Ví dụ này mô tả trực quan các biến trọng số biên được sử dụng xuyên suốt thuật toán.
+\end{example}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[scale=1.0]
+        % Draw Axis line
+        \draw[thick, ->] (-0.5,0) -- (6.5,0) node[right, font=\small] {Phân phối biên / Biên};
+        % Draw tick marks
+        \draw (0,0.1) -- (0,-0.1) node[below, font=\tiny] {$0$};
+        \draw (3,0.1) -- (3,-0.1) node[below, font=\tiny] {$0.5$};
+        \draw (6,0.1) -- (6,-0.1) node[below, font=\tiny] {$1.0$};
+        
+        % Draw Epsilon points
+        \fill[red] (1.2,0) circle (2.5pt) node[above=4pt, font=\small] {$\epsilon^-_t = 0.2$};
+        \fill[blue] (4.8,0) circle (2.5pt) node[above=4pt, font=\small] {$\epsilon^+_t = 0.6$};
+        
+        % Draw arrows and Edge
+        \draw[<->, >=stealth, thick, orange!80!black] (1.2,-0.8) -- (4.8,-0.8) node[midway, fill=white, font=\small] {$\epsilon^+_t - \epsilon^-_t = 0.4$};
+        \draw[<->, >=stealth, ultra thick, green!50!black] (3,-1.5) -- (4.8,-1.5) node[midway, fill=white, font=\small] {$\gamma_t = \frac{\epsilon^+_t - \epsilon^-_t}{2} = 0.2$};
+        
+        % Weak ranking minimum edge reference
+        \draw[dashed, gray] (3,-2.2) -- (4.2,-2.2) node[midway, below, font=\small] {$\gamma = 0.1$ (Cận lề tối thiểu)};
+        \draw (3,-2.1) -- (3,-2.3);
+        \draw (4.2,-2.1) -- (4.2,-2.3);
+        \node[right, green!50!black, font=\small] at (4.6,-2.2) {$\implies \gamma_t \geq \gamma > 0$};
+    \end{tikzpicture}
+    \caption{Trực quan hóa lề cặp (nominal edge) $\gamma_t$ và Giả thuyết Weak Ranking trong RankBoost. Để thuật toán hội tụ theo hàm mũ, lề danh nghĩa $\gamma_t$ của base ranker ở mỗi vòng phải lớn hơn một ngưỡng lề tối thiểu $\gamma > 0$.}
+    \label{fig:weak_ranking_edge}
+\end{figure}
+
 \subsubsection{Pseudocode RankBoost}
 
 Luồng hoạt động thích ứng của RankBoost được trực quan hóa qua sơ đồ khối dưới đây:
@@ -121,19 +169,37 @@ Chứng minh bằng phương pháp quy nạp toán học.
 \begin{figure}[H]
     \centering
     \begin{tikzpicture}[scale=0.85]
+        % 1. Draw Grid in background
+        \draw[dashed, gray!30] (-3,-0.5) grid (3,4);
+        
+        % 2. Draw Axes
         \draw[->] (-3.5,0) -- (3.5,0) node[right, font=\small] {$u = y_i(f(x'_i) - f(x_i))$};
         \draw[->] (0,-0.5) -- (0,4.2) node[above, font=\small] {$L(u)$};
         
+        % 3. Draw Zero-One Loss (Blue)
         \draw[blue, ultra thick] (-3.5,1) -- (0,1);
         \draw[blue, ultra thick] (0,0) -- (3.5,0);
         \draw[blue, fill=white] (0,1) circle (2pt);
         \draw[blue, fill=blue] (0,0) circle (2pt);
-        \node[blue, right, font=\small] at (1.5,0.4) {Zero-One Loss $\mathbf{1}_{u \leq 0}$};
         
+        % 4. Draw Exponential Loss (Red)
         \draw[red, very thick, smooth, samples=100, domain=-1.4:3.2] plot (\x, {exp(-\x)});
-        \node[red, above right, font=\small] at (-1.5,3.2) {Exponential Loss $e^{-u}$};
         
-        \draw[dashed, gray!50] (-3,-0.5) grid (3,4);
+        % 5. Legend kept away from curves/axes to avoid text overlap
+        \node[
+            draw=gray!45,
+            rounded corners=2pt,
+            fill=white,
+            fill opacity=0.95,
+            text opacity=1,
+            anchor=north west,
+            align=left,
+            inner sep=4pt,
+            font=\small
+        ] at (0.65,3.95) {
+            \textcolor{blue}{Zero-One Loss $\mathbf{1}_{u \leq 0}$}\\
+            \textcolor{red}{Exponential Loss $e^{-u}$}
+        };
     \end{tikzpicture}
     \caption{So sánh Zero-One Loss và Exponential Loss (minh họa toán học cho Định lý~\ref{thm:rankboost_error}). Hàm mũ $e^{-u}$ hoạt động như một cận trên lồi chặt (convex upper bound) cho hàm chỉ thị $\mathbf{1}_{u \leq 0}$, giúp tối ưu hóa bằng phương pháp gradient lồi thuận lợi hơn.}
     \label{fig:loss_comparison}
@@ -207,6 +273,59 @@ Nhân tích lũy cận của các vòng từ $t = 1$ đến $T$:
 \]
 Định lý được chứng minh hoàn chỉnh và chặt chẽ.
 \end{proof}
+
+\begin{example}[Ứng dụng số cho Cận sai số huấn luyện giảm theo hàm mũ]
+Để minh họa ý nghĩa thực tiễn của Định lý \ref{thm:rankboost_error}, giả sử chúng ta chạy RankBoost trong $T = 3$ vòng lặp. Tại mỗi vòng lặp $t$, base ranker yếu được chọn đạt được biên độ lợi thế (edge) không đổi là $\gamma_t = 0.3$ (tương đương hiệu số tỷ lệ phân bổ trọng số xếp đúng và sai là $\epsilon^+_t - \epsilon^-_t = 0.6$).
+
+Theo công thức cận trên sai số thực nghiệm \eqref{eq:rankboost_bound}, ta có:
+\[
+    \RS(f) \leq \exp\left( -2 \sum_{t=1}^3 \gamma_t^2 \right) = \exp\left( -2 \times (0.3^2 + 0.3^2 + 0.3^2) \right) = \exp(-2 \times 0.27) = \exp(-0.54) \approx 0.5827.
+\]
+Như vậy, chỉ sau 3 vòng lặp với một base ranker rất yếu (chỉ tốt hơn ngẫu nhiên một chút), cận trên của tỷ lệ cặp bị xếp hạng sai trên tập huấn luyện đã được đảm bảo giảm xuống còn dưới $58.27\%$. 
+
+Nếu chúng ta tiếp tục chạy đến $T = 10$ vòng lặp với cùng biên độ $\gamma_t = 0.3$, sai số thực nghiệm được đảm bảo:
+\[
+    \RS(f) \leq \exp(-2 \times 10 \times 0.09) = \exp(-1.8) \approx 0.1653 \quad (\text{dưới } 16.53\%).
+\]
+Và nếu chạy tới $T = 25$ vòng lặp:
+\[
+    \RS(f) \leq \exp(-2 \times 25 \times 0.09) = \exp(-4.5) \approx 0.0111 \quad (\text{dưới } 1.11\%).
+\]
+Điều này cho thấy trực quan tốc độ hội tụ cực nhanh theo hàm mũ của RankBoost, ngay cả khi các base ranker được chọn ở mỗi vòng chỉ có độ lợi thế vô cùng nhỏ bé. Tốc độ suy giảm sai số huấn luyện này được biểu diễn trực quan qua Hình \ref{fig:exponential_error_decay}.
+\end{example}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}
+        \begin{axis}[
+            xlabel={Số vòng lặp $T$},
+            ylabel={Cận trên sai số $\exp(-2\gamma^2 T)$},
+            xmin=0, xmax=30,
+            ymin=0, ymax=1,
+            xtick={0,5,10,15,20,25,30},
+            ytick={0,1},
+            grid=both,
+            grid style={dashed, gray!30},
+            legend style={at={(0.7,0.8)}, anchor=west, font=\tiny},
+            width=10.5cm,
+            height=6.2cm
+        ]
+            % Plot for gamma = 0.1 -> exp(-x/50)
+            \addplot[blue, thick, domain=0:30, samples=100] {exp(-x/50)};
+            \addlegendentry{$\gamma = 0.1$};
+            
+            % Plot for gamma = 0.2 -> exp(-2*x/25)
+            \addplot[orange, thick, domain=0:30, samples=100] {exp(-2*x/25)};
+            \addlegendentry{$\gamma = 0.2$};
+            
+            % Plot for gamma = 0.3 -> exp(-9*x/50)
+            \addplot[red, ultra thick, domain=0:30, samples=100] {exp(-9*x/50)};
+            \addlegendentry{$\gamma = 0.3$};
+        \end{axis}
+    \end{tikzpicture}
+    \caption{Tốc độ suy giảm theo hàm mũ của cận trên sai số thực nghiệm RankBoost ứng với các giá trị biên danh nghĩa $\gamma$ khác nhau. Biên độ $\gamma$ càng lớn (base ranker càng mạnh), sai số huấn luyện hội tụ về $0$ càng nhanh.}
+    \label{fig:exponential_error_decay}
+\end{figure}
 
 \begin{tcolorbox}[colback=yellow!5, colframe=orange!70!black, title={\textbf{Cận hội tụ dưới điều kiện yếu hơn (Weaker Edge Condition)}}]
 Trong trường hợp tổng quát hơn, giáo trình Mohri (trang 248) chỉ ra rằng một điều kiện yếu hơn cũng đủ để RankBoost hội tụ theo hàm mũ. Cụ thể, nếu tồn tại $\gamma > 0$ sao cho với mọi $t \in [T]$:
@@ -322,28 +441,99 @@ RankBoost tương đương với việc áp dụng \textit{coordinate descent} t
 \end{equation}
 \end{theorem}
 
-\begin{proof}[Chứng minh chi tiết]
-Tại bước $t$, coordinate descent tìm kiếm hướng tọa độ đơn vị $e_k$ tương ứng với base ranker $h_k$ thỏa mãn cực tiểu hóa \textit{directional derivative}:
-\[
-    F'(\bm{\alpha}_{t-1}; e_k) = \lim_{\eta \to 0} \frac{F(\bm{\alpha}_{t-1} + \eta e_k) - F(\bm{\alpha}_{t-1})}{\eta}.
-\]
+\begin{proof}[Chứng minh bằng phương pháp quy nạp toán học]
+Ta tiến hành chứng minh sự tương đương tuyệt đối giữa hai thuật toán bằng phương pháp quy nạp toán học theo số vòng boosting $t$.
 
-Lấy đạo hàm riêng theo hướng $\eta$ tại điểm $\eta = 0$:
-\begin{align*}
-    F'(\bm{\alpha}_{t-1}; e_k)
-    &= -\sum_{i=1}^m y_i (h_k(x'_i) - h_k(x_i)) e^{-y_i \sum_j \alpha_{t-1,j}(h_j(x'_i) - h_j(x_i))} \\
-    &= -\sum_{i=1}^m y_i (h_k(x'_i) - h_k(x_i)) D_t(i) m \prod_{s=1}^{t-1} Z_s \quad (\text{áp dụng } \eqref{eq:D_t1_identity}) \\
-    &= -\left[ \sum_{i: y_i \Delta h_k = 1} D_t(i) - \sum_{i: y_i \Delta h_k = -1} D_t(i) \right] \cdot m \prod_{s=1}^{t-1} Z_s \\
-    &= -[\epsilon^+_t - \epsilon^-_t] \cdot m \prod_{s=1}^{t-1} Z_s = -2\gamma_t \cdot m \prod_{s=1}^{t-1} Z_s.
-\end{align*}
-Để cực tiểu hóa đạo hàm theo hướng (đi theo hướng dốc giảm nhanh nhất), ta cần cực đại hóa đại lượng $\gamma_t$, điều này tương đương tuyệt đối với tiêu chí chọn base ranker yếu tốt nhất ở Bước 3.
+Đặt $f_t = \sum_{s=1}^t \alpha_s h_s$ là bộ phân hạng mạnh tích lũy của thuật toán RankBoost tại vòng $t$, tương ứng với vectơ trọng số $\bm{\alpha}_t \in \R^N$ có các thành phần $\alpha_s$ (với $s \le t$) và các thành phần khác bằng $0$.
+Đặt $\bar{f}_t$ là bộ phân hạng của Coordinate Descent tại vòng $t$, tương ứng với vectơ trọng số $\bar{\bm{\alpha}}_t \in \R^N$.
 
-Tìm độ dài bước tối ưu $\eta = \alpha_t$ bằng cách giải đạo hàm bằng $0$:
-\[
-    \frac{dF(\bm{\alpha}_{t-1} + \eta e_k)}{d\eta} = 0 \iff -\epsilon^+_t e^{-\eta} + \epsilon^-_t e^{\eta} = 0 \iff e^{2\eta} = \frac{\epsilon^+_t}{\epsilon^-_t} \iff \eta = \frac{1}{2}\log\frac{\epsilon^+_t}{\epsilon^-_t}$.
-\]
-Giá trị bước nhảy $\eta$ khớp chính xác với hệ số tin cậy $\alpha_t$ trong RankBoost.
+\begin{itemize}
+    \item \textbf{Bước cơ sở ($t=0$):} Ở vạch xuất phát, cả hai thuật toán đều khởi tạo vectơ trọng số bằng vectơ không: $\bm{\alpha}_0 = \bar{\bm{\alpha}}_0 = \bm{0} \implies f_0 = \bar{f}_0 \equiv 0$. Do đó, phân phối cặp khởi đầu của cả hai đều là phân phối đều: $D_1 = \bar{D}_1 = [1/m, \dots, 1/m]$. Đẳng thức thỏa mãn.
+    
+    \item \textbf{Giả thiết quy nạp:} Giả sử đẳng thức đúng cho vòng $t-1$, nghĩa là bộ phân hạng tích lũy của hai thuật toán trùng nhau:
+    \[
+        \bar{\bm{\alpha}}_{t-1} = \bm{\alpha}_{t-1} \implies \bar{f}_{t-1} = f_{t-1}.
+    \]
+    Hệ quả trực tiếp là phân phối cặp cảm sinh bởi hai mô hình tại đầu vòng $t$ trùng nhau hoàn toàn: $\bar{D}_t = D_t$.
+    
+    \item \textbf{Bước quy nạp (Vòng $t$):} Ta chứng minh Coordinate Descent sẽ lựa chọn hướng tọa độ và độ dài bước đi trùng khít với việc chọn base ranker $h_t$ và trọng số $\alpha_t$ của RankBoost.
+    
+    \textbf{1. Tìm hướng đi tối ưu (Chọn coordinate $e_k$):}
+    Tại bước $t$, Coordinate Descent tìm kiếm hướng tọa độ đơn vị $e_k$ (tương ứng với base ranker $h_k \in \mathcal{H}$) để cực tiểu hóa đạo hàm theo hướng (\textit{directional derivative}) của hàm loss mục tiêu $F$ tại điểm $\bm{\alpha}_{t-1}$:
+    \[
+        F'(\bm{\alpha}_{t-1}; e_k) = \lim_{\eta \to 0} \frac{F(\bm{\alpha}_{t-1} + \eta e_k) - F(\bm{\alpha}_{t-1})}{\eta}.
+    \]
+    Khai triển đạo hàm riêng theo hướng $\eta$ tại điểm $\eta = 0$:
+    \begin{align*}
+        F'(\bm{\alpha}_{t-1}; e_k)
+        &= -\sum_{i=1}^m y_i (h_k(x'_i) - h_k(x_i)) \exp\Biggl(-y_i \sum_{j=1}^N \alpha_{t-1,j}(h_j(x'_i) - h_j(x_i))\Biggr) \\
+        &= -\sum_{i=1}^m y_i (h_k(x'_i) - h_k(x_i)) D_t(i) m \prod_{s=1}^{t-1} Z_s \quad (\text{áp dụng đẳng thức quy nạp } \eqref{eq:D_t1_identity}) \\
+        &= -m \left( \prod_{s=1}^{t-1} Z_s \right) \left[ \sum_{i: y_i \Delta h_k = 1} D_t(i) - \sum_{i: y_i \Delta h_k = -1} D_t(i) \right] \\
+        &= -m \left( \prod_{s=1}^{t-1} Z_s \right) [\epsilon^+_t - \epsilon^-_t] = -2\gamma_t \cdot m \prod_{s=1}^{t-1} Z_s.
+    \end{align*}
+    Do hằng số $m \prod_{s=1}^{t-1} Z_s > 0$ cố định tại đầu vòng $t$, việc cực tiểu hóa đạo hàm hướng $F'(\bm{\alpha}_{t-1}; e_k)$ tương đương tuyệt đối với việc \textbf{cực đại hóa độ lợi thế $\gamma_t$} (nominal edge). Đây chính xác là tiêu chí chọn base ranker yếu $h_t$ tốt nhất ở Bước 3 của RankBoost:
+    \[
+        h_t = \arg\max_{h \in \mathcal{H}} \gamma_t(h) = \arg\min_{h \in \mathcal{H}} (\epsilon^-_t(h) - \epsilon^+_t(h)).
+    \]
+    Như vậy, Coordinate Descent chọn đúng tọa độ tương ứng với base ranker $h_t$ của RankBoost.
+    
+    \textbf{2. Tìm bước nhảy tối ưu (Line Search độ dài $\eta$):}
+    Sau khi đã xác định hướng tọa độ $e_t$ tương ứng với $h_t$, Coordinate Descent giải bài toán tìm kiếm đường thẳng (exact line search) để tìm độ dài bước nhảy $\eta > 0$ tối ưu:
+    \[
+        \eta = \arg\min_{\eta} F(\bm{\alpha}_{t-1} + \eta e_t).
+    \]
+    Lấy đạo hàm của hàm số một biến theo $\eta$ và giải phương trình đạo hàm bằng $0$:
+    \begin{align*}
+        &\frac{dF(\bm{\alpha}_{t-1} + \eta e_t)}{d\eta} = 0 \\
+        &\iff -\sum_{i=1}^m y_i (h_t(x'_i) - h_t(x_i)) \\
+        &\qquad \times \exp\Biggl(-y_i \sum_{j=1}^N \alpha_{t-1,j} (h_j(x'_i) - h_j(x_i)) - y_i \eta (h_t(x'_i) - h_t(x_i)) \Biggr) = 0 \\
+        &\iff -\sum_{i=1}^m y_i \Delta h_t D_t(i) e^{-\eta y_i \Delta h_t} = 0 \quad (\text{thế phân phối } D_t) \\
+        &\iff -\left[ \sum_{i: y_i \Delta h_t = 1} D_t(i) e^{-\eta} - \sum_{i: y_i \Delta h_t = -1} D_t(i) e^{\eta} \right] = 0 \\
+        &\iff -\epsilon^+_t e^{-\eta} + \epsilon^-_t e^{\eta} = 0 \\
+        &\iff e^{2\eta} = \frac{\epsilon^+_t}{\epsilon^-_t} \iff \eta = \frac{1}{2}\log\frac{\epsilon^+_t}{\epsilon^-_t}.
+    \end{align*}
+    Giá trị độ dài bước tối ưu $\eta$ này khớp chính xác tuyệt đối với hệ số tin cậy $\alpha_t$ của RankBoost.
+    
+    \textbf{3. Cập nhật trạng thái:}
+    Vectơ trọng số mới của hai thuật toán trùng nhau:
+    \[
+        \bar{\bm{\alpha}}_t = \bar{\bm{\alpha}}_{t-1} + \eta e_t = \bm{\alpha}_{t-1} + \alpha_t e_t = \bm{\alpha}_t \implies \bar{f}_t = f_t.
+    \]
+\end{itemize}
+Chứng minh quy nạp hoàn tất. RankBoost và Coordinate Descent là đồng nhất về mặt toán học.
 \end{proof}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[scale=0.9]
+        % Draw Contour lines of a convex function
+        \draw[gray!40, thick] (3,2) ellipse (0.6cm and 0.4cm);
+        \draw[gray!40, thick] (3,2) ellipse (1.5cm and 1.0cm);
+        \draw[gray!40, thick] (3,2) ellipse (2.5cm and 1.7cm);
+        \draw[gray!40, thick] (3,2) ellipse (3.6cm and 2.4cm);
+        \draw[gray!40, thick] (3,2) ellipse (4.8cm and 3.2cm);
+        
+        % Optimum point
+        \fill[red] (3,2) circle (2pt) node[above right, font=\tiny] {$\bm{\alpha}^*$ (Tối ưu)};
+        
+        % Coordinate Axes
+        \draw[thick, ->] (-0.5,0) -- (6.0,0) node[right, font=\tiny] {$\alpha_1$ ($h_1$)};
+        \draw[thick, ->] (0,-0.5) -- (0,4.5) node[above, font=\tiny] {$\alpha_2$ ($h_2$)};
+        
+        % Coordinate Descent Trajectory Steps
+        \draw[ultra thick, blue, ->, >=stealth] (0,0) -- (1.8,0) node[midway, below=3pt, font=\tiny] {Bước 1 ($\alpha_1$)};
+        \draw[ultra thick, blue, ->, >=stealth] (1.8,0) -- (1.8,1.4) node[midway, right=3pt, font=\tiny] {Bước 2 ($\alpha_2$)};
+        \draw[ultra thick, blue, ->, >=stealth] (1.8,1.4) -- (2.6,1.4) node[midway, below=2pt, font=\tiny] {Bước 3};
+        \draw[ultra thick, blue, ->, >=stealth] (2.6,1.4) -- (2.6,1.85) node[midway, right=2pt, font=\tiny] {Bước 4};
+        \draw[ultra thick, blue, ->, >=stealth] (2.6,1.85) -- (2.9,1.85);
+        \draw[ultra thick, blue, ->, >=stealth] (2.9,1.85) -- (2.9,1.97) -- (3.0,2.0);
+        
+        % Start point
+        \fill[black] (0,0) circle (2.5pt) node[below left, font=\tiny] {$\bm{\alpha}_0 = \bm{0}$};
+    \end{tikzpicture}
+    \caption{Trực quan hóa quỹ đạo tối ưu hóa của RankBoost thông qua Coordinate Descent trên không gian 2D của trọng số $\bm{\alpha}$. Thuật toán bắt đầu từ gốc tọa độ $\bm{\alpha}_0 = \bm{0}$ và di chuyển vuông góc dọc theo các trục tọa độ (mỗi trục đại diện cho một base ranker $h_j$) để tiệm cận về điểm cực tiểu toàn cục $\bm{\alpha}^*$.}
+    \label{fig:coordinate_descent_steps}
+\end{figure}
 
 \begin{tcolorbox}[colback=blue!5, colframe=blue!50!black]
 \textbf{Nhận xét}: Phương trình \eqref{eq:F_obj} là một cận trên lồi chặt của hàm tổn thất nhị phân thực tế. RankBoost thực chất chính là giải pháp tối ưu hóa tối tân sử dụng gradient lồi trên bao lồi của các bộ phân hạng yếu.
@@ -357,45 +547,76 @@ Cho $\Hcal$ là tập hàm thực. Với $\rho > 0$, $\delta > 0$, với xác su
     R(h) \leq \RR{\rho}(h) + \frac{2}{\rho}\bigl[R^{D_1}_m(\Hcal) + R^{D_2}_m(\Hcal)\bigr] + \sqrt{\frac{\log(1/\delta)}{2m}}.
     \label{eq:ensemble_bound_formula}
 \end{equation}
-Trong đó, $\RR{\rho}(h) \equiv \widehat{R}_{S,\rho}(h)$ là **empirical margin ranking loss** (sai số lề thực nghiệm trên tập mẫu $S$ với lề $\rho$) và hai số hạng Rademacher $\mathfrak{R}_m^{D_1}(\mathcal{H})$ và $\mathfrak{R}_m^{D_2}(\mathcal{H})$ đều có cùng kích thước mẫu là $m$ vì đây là cận tổng quát (general bound) cho preference ranking của giáo trình Mohri. Tuy nhiên, cần lưu ý một điểm tinh tế rằng khi áp dụng sang bipartite ranking, do các mẫu tích cực và tiêu cực được lấy độc lập từ hai phân phối riêng biệt với kích thước mẫu lần lượt là $m$ và $n$, cận Rademacher tương ứng sẽ tách thành hai số hạng ứng với hai kích thước mẫu khác nhau là $\mathfrak{R}_m^{D^+}(\mathcal{H})$ và $\mathfrak{R}_n^{D^-}(\mathcal{H})$.
+Trong đó, $\RR{\rho}(h) \equiv \widehat{R}_{S,\rho}(h)$ là \textbf{empirical margin ranking loss} (sai số lề thực nghiệm trên tập mẫu $S$ với lề $\rho$) và hai số hạng Rademacher $\mathfrak{R}_m^{D_1}(\mathcal{H})$ và $\mathfrak{R}_m^{D_2}(\mathcal{H})$ đều có cùng kích thước mẫu là $m$ vì đây là cận tổng quát (general bound) cho preference ranking của giáo trình Mohri. Tuy nhiên, cần lưu ý một điểm tinh tế rằng khi áp dụng sang bipartite ranking, do các mẫu tích cực và tiêu cực được lấy độc lập từ hai phân phối riêng biệt với kích thước mẫu lần lượt là $m$ và $n$, cận Rademacher tương ứng sẽ tách thành hai số hạng ứng với hai kích thước mẫu khác nhau là $\mathfrak{R}_m^{D^+}(\mathcal{H})$ và $\mathfrak{R}_n^{D^-}(\mathcal{H})$.
 \end{corollary}
 
-\begin{proof}
-Áp dụng Định lý tổng quát về chặn lề phân hạng (Theorem~\ref{thm:margin_ranking}) cho không gian giả thuyết $\conv(\Hcal)$ và kết hợp kết quả bổ đề $\hat{R}_S(\conv(\Hcal)) = \hat{R}_S(\Hcal)$.
+\begin{proof}[Chứng minh chi tiết]
+Ta tiến hành chứng minh hệ thức dựa trên việc áp dụng Định lý tổng quát \ref{thm:margin_ranking} cho không gian giả thuyết mở rộng $\conv(\Hcal)$ kết hợp với bổ đề Rademacher của bao lồi:
+
+\begin{enumerate}
+    \item \textbf{Bước 1: Định lý tổng quát về chặn lề phân hạng cho không gian giả thuyết $\conv(\Hcal)$.}
+    Áp dụng Định lý tổng quát về chặn lề phân hạng (ở đây là Theorem 10.1 của giáo trình Mohri) cho tập các giả thuyết là bao lồi lồi $\conv(\Hcal)$ thay cho $\Hcal$, ta thu được với xác suất ít nhất $1 - \delta$, với mọi $h \in \conv(\Hcal)$:
+    \begin{equation}
+        R(h) \leq \RR{\rho}(h) + \frac{2}{\rho}\bigl[R^{D_1}_m(\conv(\Hcal)) + R^{D_2}_m(\conv(\Hcal))\bigr] + \sqrt{\frac{\log(1/\delta)}{2m}}.
+        \label{eq:ensemble_step1}
+    \end{equation}
+    Trong đó, $R^{D_1}_m(\conv(\Hcal))$ và $R^{D_2}_m(\conv(\Hcal))$ lần lượt là Rademacher Complexity tổng quát của bao lồi $\conv(\Hcal)$ trên phân phối biên $D_1$ và $D_2$ với mẫu kích thước $m$.
+    
+    \item \textbf{Bước 2: Áp dụng Bổ đề 7.4 (Rademacher complexity của bao lồi).}
+    Một kết quả lý thuyết kinh điển của Rademacher Complexity chỉ ra rằng độ phức tạp Rademacher thực nghiệm của bao lồi $\conv(\Hcal)$ của một tập giả thuyết $\Hcal$ luôn bằng chính độ phức tạp Rademacher thực nghiệm của tập $\Hcal$ đó trên bất kỳ tập mẫu cụ thể $S'$ nào:
+    \begin{equation}
+        \widehat{\mathfrak{R}}_{S'}(\conv(\Hcal)) = \widehat{\mathfrak{R}}_{S'}(\Hcal).
+        \label{eq:lemma_7_4}
+    \end{equation}
+    Lấy kỳ vọng hai vế của đẳng thức \eqref{eq:lemma_7_4} theo sự rút mẫu ngẫu nhiên từ phân phối $D_1$ và $D_2$ kích thước $m$, ta có kết quả Rademacher Complexity tổng quát tương đương tuyệt đối:
+    \begin{align}
+        R^{D_1}_m(\conv(\Hcal)) &= R^{D_1}_m(\Hcal), \label{eq:rad_eq_1} \\
+        R^{D_2}_m(\conv(\Hcal)) &= R^{D_2}_m(\Hcal). \label{eq:rad_eq_2}
+    \end{align}
+    
+    \item \textbf{Bước 3: Thế vào cận trên.}
+    Thế trực tiếp các đẳng thức Rademacher tương đương \eqref{eq:rad_eq_1} và \eqref{eq:rad_eq_2} vào công thức \eqref{eq:ensemble_step1}, ta thu được cận trên tổng quát hóa:
+    \[
+        R(h) \leq \RR{\rho}(h) + \frac{2}{\rho}\bigl[R^{D_1}_m(\Hcal) + R^{D_2}_m(\Hcal)\bigr] + \sqrt{\frac{\log(1/\delta)}{2m}}.
+    \]
+\end{enumerate}
+Hệ quả được chứng minh hoàn tất và chặt chẽ.
 \end{proof}
 
 \textbf{Hệ thống 3 Chặn Tổng quát hóa của giáo trình Mohri (trang 249):}
 
 Để phân tích sâu sắc cấu trúc lý thuyết tổng quát hóa, giáo trình gốc \citep{mohri2018foundations} thiết lập hệ thống 3 chặn toán học chặt chẽ. Đặt $f = \sum_{t=1}^T \alpha_t h_t$ là ensemble mạnh thu được từ RankBoost. Vì $f$ và phiên bản chuẩn hóa $f/\norm{\bm{\alpha}}_1 \in \conv(\Hcal)$ tạo ra cùng thứ tự xếp hạng tương đối, ta lần lượt có:
 
-1. **Chặn biên thực nghiệm tổng quát (Theorem 10.2 / Định lý 10.2):**
-\begin{equation}
-    R(h) \leq \hat{R}_{S,\rho}(h) + \frac{2}{\rho}\bigl[\widehat{\mathcal{R}}_S(\Hcal_{D_1}) + \widehat{\mathcal{R}}_S(\Hcal_{D_2})\bigr] + \sqrt{\frac{\log(1/\delta)}{2m}}.
-    \label{eq:bound_thm_10_2}
-\end{equation}
+\begin{enumerate}
+    \item \textbf{Chặn biên thực nghiệm tổng quát (Theorem 10.2 / Định lý 10.2):}
+    \begin{equation}
+        R(h) \leq \hat{R}_{S,\rho}(h) + \frac{2}{\rho}\bigl[\widehat{\mathcal{R}}_S(\Hcal_{D_1}) + \widehat{\mathcal{R}}_S(\Hcal_{D_2})\bigr] + \sqrt{\frac{\log(1/\delta)}{2m}}.
+        \label{eq:bound_thm_10_2}
+    \end{equation}
 
-2. **Chặn biên thực nghiệm cho chuẩn hóa $f/\norm{\bm{\alpha}}_1$ (Phương trình 10.18 của sách):**
-\begin{equation}
-    R(f) \leq \hat{R}_{S,\rho}\left(\frac{f}{\norm{\bm{\alpha}}_1}\right) + \frac{2}{\rho}\bigl[\widehat{\mathcal{R}}_S(\Hcal_{D_1}) + \widehat{\mathcal{R}}_S(\Hcal_{D_2})\bigr] + \sqrt{\frac{\log(1/\delta)}{2m}}.
-    \label{eq:bound_10_18}
-\end{equation}
+    \item \textbf{Chặn biên thực nghiệm cho chuẩn hóa $f/\norm{\bm{\alpha}}_1$ (Phương trình 10.18 của sách):}
+    \begin{equation}
+        R(f) \leq \hat{R}_{S,\rho}\left(\frac{f}{\norm{\bm{\alpha}}_1}\right) + \frac{2}{\rho}\bigl[\widehat{\mathcal{R}}_S(\Hcal_{D_1}) + \widehat{\mathcal{R}}_S(\Hcal_{D_2})\bigr] + \sqrt{\frac{\log(1/\delta)}{2m}}.
+        \label{eq:bound_10_18}
+    \end{equation}
 
-3. **Chặn biên thực nghiệm dựa trên Rademacher Complexity biên (Phương trình 10.19 của sách):**
-Do độ phức tạp Rademacher thực nghiệm $\widehat{\mathcal{R}}_S(\Hcal_{D_i})$ luôn được chặn trên bởi Rademacher Complexity tổng quát $R^{D_i}_m(\Hcal)$, ta có chặn tối ưu không phụ thuộc vào tập mẫu cụ thể:
-\begin{equation}
-    R(f) \leq \hat{R}_{S,\rho}\left(\frac{f}{\norm{\bm{\alpha}}_1}\right) + \frac{2}{\rho}\bigl[R^{D_1}_m(\Hcal) + R^{D_2}_m(\Hcal)\bigr] + \sqrt{\frac{\log(1/\delta)}{2m}}.
-    \label{eq:bound_10_19}
-\end{equation}
+    \item \textbf{Chặn biên thực nghiệm dựa trên Rademacher Complexity biên (Phương trình 10.19 của sách):}
+    Do độ phức tạp Rademacher thực nghiệm $\widehat{\mathcal{R}}_S(\Hcal_{D_i})$ luôn được chặn trên bởi Rademacher Complexity tổng quát $R^{D_i}_m(\Hcal)$, ta có chặn tối ưu không phụ thuộc vào tập mẫu cụ thể:
+    \begin{equation}
+        R(f) \leq \hat{R}_{S,\rho}\left(\frac{f}{\norm{\bm{\alpha}}_1}\right) + \frac{2}{\rho}\bigl[R^{D_1}_m(\Hcal) + R^{D_2}_m(\Hcal)\bigr] + \sqrt{\frac{\log(1/\delta)}{2m}}.
+        \label{eq:bound_10_19}
+    \end{equation}
+\end{enumerate}
 
 \begin{tcolorbox}[colback=yellow!5, colframe=orange!70!black, title={\textbf{Quan sát then chốt}}]
-Cả ba chặn trên đều có đặc tính vô cùng quan trọng: **chúng hoàn toàn không phụ thuộc vào số lượng vòng lặp boosting $T$**. Chúng chỉ phụ thuộc vào margin $\rho$, kích thước mẫu dữ liệu $m$, và năng lực biểu diễn Rademacher complexity của tập $\Hcal$. Điều này giải thích trên phương diện lý thuyết tại sao RankBoost có khả năng kháng quá khớp (overfitting) cực kỳ mạnh mẽ ngay cả khi chạy với số vòng lặp $T$ rất lớn \citep{rudin2005margin}.
+Cả ba chặn trên đều có đặc tính vô cùng quan trọng: \textbf{chúng hoàn toàn không phụ thuộc vào số lượng vòng lặp boosting $T$}. Chúng chỉ phụ thuộc vào margin $\rho$, kích thước mẫu dữ liệu $m$, và năng lực biểu diễn Rademacher complexity của tập $\Hcal$. Điều này giải thích trên phương diện lý thuyết tại sao RankBoost có khả năng kháng quá khớp (overfitting) cực kỳ mạnh mẽ ngay cả khi chạy với số vòng lặp $T$ rất lớn \citep{rudin2005margin}.
 \end{tcolorbox}
 
 \begin{tcolorbox}[colback=extensioncolor, colframe=yellow!60!black, title={\textbf{[MỞ RỘNG] Hai hướng tổng quát hóa thuật toán RankBoost (trang 248)}}]
 Giáo trình Mohri vạch ra hai hướng mở rộng vô cùng quan trọng đối với thuật toán RankBoost cơ bản:
 \begin{enumerate}
-    \item **Không gian giả thuyết xuất thực tế**: Thay vì chỉ giới hạn base rankers trả về nhị phân $\{0,1\}$, thuật toán được tổng quát hóa cho phép base rankers trả về giá trị thực bất kỳ trong $[0,1]$ hoặc $\R$. Điều này cho phép sử dụng các mô hình cơ sở mạnh hơn như cây quyết định (decision trees).
-    \item **Tối ưu hóa hệ số tin cậy phi đóng-form (Non-closed-form alpha)**: Trong trường hợp tổng quát trên, hệ số tin cậy $\alpha_t$ không còn công thức nghiệm đóng (closed-form) dạng $\frac{1}{2}\log(\epsilon^+_t/\epsilon^-_t)$ đơn giản nữa. Khi đó, $\alpha_t$ bắt buộc phải được giải bằng các thuật toán tối ưu hóa số học một chiều như phương pháp tìm kiếm đường thẳng (line search) hoặc lặp Newton-Raphson để cực tiểu hóa hệ số chuẩn hóa toàn cục $Z_t$.
+    \item \textbf{Không gian giả thuyết xuất thực tế}: Thay vì chỉ giới hạn base rankers trả về nhị phân $\{0,1\}$, thuật toán được tổng quát hóa cho phép base rankers trả về giá trị thực bất kỳ trong $[0,1]$ hoặc $\R$. Điều này cho phép sử dụng các mô hình cơ sở mạnh hơn như cây quyết định (decision trees).
+    \item \textbf{Tối ưu hóa hệ số tin cậy phi đóng-form (Non-closed-form alpha)}: Trong trường hợp tổng quát trên, hệ số tin cậy $\alpha_t$ không còn công thức nghiệm đóng (closed-form) dạng $\frac{1}{2}\log(\epsilon^+_t/\epsilon^-_t)$ đơn giản nữa. Khi đó, $\alpha_t$ bắt buộc phải được giải bằng các thuật toán tối ưu hóa số học một chiều như phương pháp tìm kiếm đường thẳng (line search) hoặc lặp Newton-Raphson để cực tiểu hóa hệ số chuẩn hóa toàn cục $Z_t$.
 \end{enumerate}
 \end{tcolorbox}
 
@@ -406,3 +627,34 @@ RankBoost chuẩn tối ưu hóa hàm tổn thất lũy thừa nhưng không c�
 \]
 chỉ ra tốc độ hội tụ margin tiệm cận tối ưu vượt trội. Tuy nhiên, các phân tích thực nghiệm chỉ ra RankBoost nguyên bản vẫn cực kỳ bền vững trên đa số tập dữ liệu thực tế.
 \end{tcolorbox}
+
+% ── KHẢO SÁT MỐI LIÊN HỆ LÝ THUYẾT ────────────────────────────────────────────
+\subsubsection{Khảo sát mối liên hệ học thuật với các chương khác trong giáo trình}
+\label{sec:rankboost_connections}
+
+Để thực hiện khảo sát toàn diện mối liên hệ lý thuyết giữa các chương trong cuốn sách \textit{Foundations of Machine Learning}, chúng tôi tiến hành phân tích sâu sắc các mối tương quan hữu cơ từ góc độ của thuật toán RankBoost:
+
+\paragraph{1. RankBoost $\leftrightarrow$ SVM Ranking (Kết nối với Chương 10.3 - SVM Ranking)}
+\begin{itemize}
+    \item \textbf{Sự tương đồng về triết lý Pairwise}: Cả RankBoost và SVM Ranking đều thuộc trường phái học phân hạng cặp (\textit{pairwise score-based ranking}). Cả hai đều tìm kiếm một scoring function $h$ trên không gian $\mathcal{X}$ để tối ưu hóa thứ tự so sánh của các cặp thực thể.
+    \item \textbf{Sự đối lập về Hàm tổn thất (Loss Functions)}: 
+    \begin{itemize}
+        \item SVM Ranking sử dụng hàm tổn thất lề cặp dạng Hinge (\textit{pairwise hinge loss}) $\max\left(0, 1 - y_i(h(x'_i) - h(x_i))\right)$, dẫn đến một bài toán quy hoạch QP lồi có ràng buộc hoặc tối ưu hóa không ràng buộc bằng các thuật toán gradient ngẫu nhiên primal như Pegasos SGD.
+        \item RankBoost sử dụng hàm tổn thất lũy thừa cặp (\textit{pairwise exponential loss}) $\exp\left(-y_i(h(x'_i) - h(x_i))\right)$, một cận lồi chặn trên trơn láng hơn, cho phép tối ưu bằng thuật toán hạ độ dốc tọa độ (Coordinate Descent) cực kỳ nhanh chóng.
+    \end{itemize}
+    \item \textbf{Cơ chế kiểm soát Quá khớp (Overfitting)}: SVM Ranking kiểm soát năng lực học thông qua số hạng điều hòa chuẩn $\ell_2$ tường minh $\frac{1}{2}\|w\|^2_2$ trong Primal Objective. Ngược lại, giống như AdaBoost, RankBoost không cần số hạng điều hòa tường minh nào, mà tự động kiểm soát quá khớp cực kỳ mạnh mẽ thông qua cơ chế tự động tối đa hóa lề (\textit{implicit margin maximization}). Hệ quả của cơ chế này là lề phân hạng thực tế $\rho$ của ensemble liên tục được đẩy cao khi tăng số vòng boosting $T$, giúp giảm thiểu sai số Rademacher tổng quát theo Corollary 10.4.
+\end{itemize}
+
+\paragraph{2. Chặn sai số RankBoost $\leftrightarrow$ Rademacher Complexity (Kết nối với Chương 3 - Generalization Bounds)}
+\begin{itemize}
+    \item \textbf{Nền tảng lý thuyết tổng quát hóa}: Cận sai số phân hạng thực tế $R(h)$ của RankBoost được xây dựng vững chắc từ các kết quả đo lường năng lực học tập dựa trên độ phức tạp Rademacher thực nghiệm $\widehat{\mathcal{R}}_S(\mathcal{H})$ ở Chương 3.
+    \item \textbf{Sự chuyển dịch không gian mẫu}: Điểm đặc thù trong chặn tổng quát hóa của phân hạng (Theorem 10.2) là sai số Rademacher trên tập mẫu cặp $S$ được phân tách thành tổng độ phức tạp Rademacher của hai phân bố mẫu biên độc lập $\mathfrak{R}_m^{D_1}(\mathcal{H})$ và $\mathfrak{R}_m^{D_2}(\mathcal{H})$ ứng với vị trí thứ nhất và thứ hai của cặp. Điều này phản ánh bản chất của bài toán so sánh cặp, nơi sự biến động mẫu ảnh hưởng đồng thời đến cả hai phía của quan hệ ưu tiên.
+\end{itemize}
+
+\paragraph{3. RankBoost $\leftrightarrow$ AdaBoost ở mức boosting tổng quát (Kết nối với Chương 7)}
+\begin{itemize}
+    \item \textbf{Điểm giống nhau cốt lõi}: RankBoost và AdaBoost đều thay hàm lỗi rời rạc bằng cận trên dạng mũ rồi tối ưu bằng cách cộng dần các weak learners. Khác biệt nằm ở đối tượng đặt trọng số: AdaBoost đặt trọng số trên từng mẫu đơn lẻ, còn RankBoost đặt trọng số trên từng cặp ưu tiên $(x_i,x'_i,y_i)$.
+    \item \textbf{Từ pointwise sang pairwise}: Có thể hiểu RankBoost như phiên bản pairwise của tư tưởng AdaBoost. Với scoring function tuyến tính, mỗi cặp ưu tiên có thể được nhìn như một ràng buộc trên hiệu $x'_i-x_i$ và biên $y_i(h(x'_i)-h(x_i))$. Vì vậy pairwise exponential loss của RankBoost có cùng vai trò với exponential loss trong AdaBoost, nhưng không nên xem đây là phép thay thế trực tiếp một--một cho AdaBoost trên dữ liệu gốc.
+    \item \textbf{Rào cản độc lập thống kê}: Nếu biến các cặp thành mẫu ảo, các mẫu ảo thường không còn độc lập i.i.d. vì một điểm dữ liệu gốc có thể xuất hiện trong nhiều cặp khác nhau. Do đó, chặn tổng quát hóa của RankBoost phải được chứng minh trực tiếp bằng công cụ Rademacher cho ranking như trong Định lý 10.2 và Hệ quả 10.4, thay vì chỉ mượn nguyên văn phân tích AdaBoost.
+    \item \textbf{Phân biệt với phần bipartite}: Liên hệ ở đây là liên hệ thuật toán/loss tổng quát. Quan hệ chặt hơn giữa RankBoost và AdaBoost trong riêng bipartite ranking, thông qua hai mục tiêu $F^+F^-$ và $F^+ + F^-$, được trình bày ở phần Bipartite Ranking.
+\end{itemize}
