@@ -19,10 +19,19 @@
 \usepackage{booktabs}
 \usepackage{float}
 \usepackage{caption}
-\usepackage{algorithm}
-\usepackage{algorithmicx}
-\usepackage{algpseudocode}
+\usepackage{tikz}
+% --- Thêm cho phần lý thuyết ---
 \usepackage{tcolorbox}
+\tcbuselibrary{skins}
+\newtcolorbox{morong}{
+    colback=yellow!20,
+    colframe=orange!80,
+    title=MỞ RỘNG
+}
+\newtheorem{theorem}{Định lý}[section]
+\newtheorem{lemma}[theorem]{Bổ đề}
+\newtheorem{definition}{Định nghĩa}[section]
+\newtheorem{example}{Ví dụ}[section]
 
 % --- Title Page ---
 \title{
@@ -43,14 +52,18 @@
 \tableofcontents
 \newpage
 
-% --- Import Theoretical Foundation (Member 1, 2, 3) ---
-\input{part1_foundation.tex}
-\newpage
+% --- Phần lý thuyết (Thành viên 1: ngọc) ---
+\input{part1_theory}
 
+% --- Import Theoretical Foundation (Member 1, 2, 3) ---
+% \input{part1_foundation.tex}
+% \newpage
+
+\newpage
 % --- Import Experimental Results (Member 4) ---
 \input{part2_experiments.tex}
-\newpage
 
+\newpage
 \section{Phần 3: Nghiên cứu tiên tiến liên quan}
 
 % --- BÀI BÁO SỐ 1  ---

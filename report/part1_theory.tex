@@ -1,0 +1,600 @@
+% ===== PART 1: LÝ THUYẾT (Thành viên 1 - Ngọc) =====
+
+\section{Giới thiệu chương}
+\label{sec:intro}
+
+Bài toán \textbf{xếp hạng} (ranking) là một trong những bài toán 
+trung tâm của học máy hiện đại, xuất hiện rộng rãi trong nhiều 
+ứng dụng thực tế. Khi người dùng nhập một truy vấn vào công cụ 
+tìm kiếm như Google, hệ thống không chỉ cần tìm ra các trang web 
+liên quan mà còn phải \textit{sắp xếp} chúng theo mức độ liên quan 
+giảm dần. Tương tự, các hệ thống gợi ý như Netflix hay Spotify cần 
+xếp hạng hàng nghìn bộ phim hay bài hát để đưa ra danh sách phù hợp 
+nhất với từng người dùng.
+
+Điểm khác biệt cốt lõi giữa ranking và các bài toán học máy truyền 
+thống là: thay vì dự đoán một nhãn hay một giá trị tuyệt đối cho 
+từng điểm dữ liệu, mục tiêu của ranking là học một \textbf{thứ tự 
+tương đối} giữa các điểm. Nói cách khác, điều quan trọng không phải 
+là điểm dữ liệu $x$ được gán nhãn gì, mà là liệu $x$ có đứng 
+\textit{trước} hay \textit{sau} $x'$ trong thứ tự xếp hạng.
+
+Chương 9 của~\cite{mohri2018foundations} trình bày một cách hệ thống 
+các nền tảng lý thuyết cho bài toán ranking, bao gồm:
+
+\begin{itemize}
+  \item \textbf{Định nghĩa hình thức bài toán ranking} 
+        (Mục~\ref{sec:problem}): Phát biểu bài toán dưới dạng học 
+        hàm scoring từ các cặp dữ liệu có thứ tự ưu tiên.
+
+  \item \textbf{Chặn tổng quát hoá} 
+        (Mục~\ref{sec:genbounds}): Dẫn xuất các chặn trên cho 
+        ranking loss tổng quát dựa trên Rademacher complexity.
+
+  \item \textbf{Ranking với SVM} 
+        (Mục~\ref{sec:svmranking}): Mở rộng bài toán tối ưu hoá 
+        SVM sang không gian các cặp dữ liệu.
+
+  \item \textbf{Thuật toán RankBoost} 
+        (Mục~\ref{sec:rankboost}): Áp dụng tư tưởng boosting để 
+        kết hợp nhiều hàm ranking yếu thành một hàm ranking mạnh.
+
+  \item \textbf{Bipartite ranking và AUC} 
+        (Mục~\ref{sec:bipartite}): Xem xét trường hợp đặc biệt 
+        khi tập dữ liệu chia thành hai nhóm dương và âm, liên hệ 
+        trực tiếp với diện tích dưới đường cong ROC (AUC).
+
+  \item \textbf{Preference-based setting} 
+        (Mục~\ref{sec:preference}): Tổng quát hoá sang trường hợp 
+        học từ dữ liệu sở thích (preference feedback).
+\end{itemize}
+
+Về mặt lý thuyết, chương này được xây dựng trên nền tảng của hai 
+chương trước trong sách: \textbf{Rademacher complexity} (Chương~3) 
+được dùng trực tiếp để chứng minh các chặn tổng quát hoá, và 
+\textbf{Support Vector Machines} (Chương~5) được mở rộng tự nhiên 
+sang không gian cặp dữ liệu. Ngoài ra, RankBoost (Mục~\ref{sec:rankboost}) 
+kế thừa tư tưởng từ \textbf{AdaBoost} (Chương~7).
+
+% ===================================================
+\section{Phần 1: Báo cáo lý thuyết}
+
+\subsection{Kiến thức chuẩn bị}
+
+\subsubsection{Không gian giả thuyết và hàm mất mát}
+\begin{definition}
+Cho tập mẫu $\mathcal{X}$, một \textbf{hàm scoring} là ánh xạ 
+$f: \mathcal{X} \to \mathbb{R}$ 
+dùng để gán điểm số cho từng điểm dữ liệu.
+\end{definition}
+
+\subsubsection{Rademacher Complexity}
+Nhắc lại khái niệm Rademacher complexity sẽ được dùng 
+trong chứng minh generalization bound ở Phần~\ref{sec:genbounds}.
+
+\begin{definition}
+Cho tập mẫu $S = \{x_1, \ldots, x_m\}$ lấy từ phân phối $\mathcal{D}$,
+\textbf{Rademacher complexity thực nghiệm} của lớp hàm $\mathcal{H}$ là:
+\[
+\hat{\mathfrak{R}}_S(\mathcal{H}) = 
+\mathbb{E}_{\boldsymbol{\sigma}}\left[
+  \sup_{h \in \mathcal{H}} \frac{1}{m} \sum_{i=1}^{m} \sigma_i h(x_i)
+\right]
+\]
+trong đó $\sigma_i$ là các biến ngẫu nhiên Rademacher độc lập.
+\end{definition}
+
+\subsubsection{Support Vector Machine (SVM)}
+
+SVM (Chương~5 của~\cite{mohri2018foundations}) là thuật toán học 
+có giám sát tìm siêu phẳng phân tách hai lớp với \textbf{margin 
+lớn nhất}. Với tập huấn luyện $\{(z_i, y_i)\}_{i=1}^n$, 
+$y_i \in \{-1,+1\}$, bài toán tối ưu hoá SVM soft-margin là:
+\[
+  \min_{\mathbf{w}, b, \boldsymbol{\xi}} 
+  \frac{1}{2}\|\mathbf{w}\|^2 + C\sum_{i=1}^n \xi_i
+\]
+\[
+  \text{s.t. } y_i(\mathbf{w}^\top \phi(z_i) + b) \geq 1 - \xi_i, 
+  \quad \xi_i \geq 0, \quad \forall i,
+\]
+trong đó $\phi: \mathcal{X} \to \mathcal{F}$ là ánh xạ đặc trưng 
+vào không gian Hilbert $\mathcal{F}$, $C > 0$ là tham số điều chỉnh. 
+Ở Mục~\ref{sec:svmranking}, ta sẽ thấy bài toán này được mở rộng 
+tự nhiên sang không gian cặp $(x, x')$ để giải bài toán ranking.
+
+\subsection{Bài toán Ranking}
+\label{sec:problem}
+
+\subsubsection{Phát biểu hình thức}
+
+Trong bài toán ranking, ta được cho một tập mẫu huấn luyện gồm 
+các \textbf{cặp có thứ tự ưu tiên}. Cụ thể, mỗi mẫu huấn luyện 
+là một cặp $(x, x') \in \mathcal{X} \times \mathcal{X}$ kèm theo 
+thông tin rằng $x$ \textit{được ưu tiên hơn} $x'$, ký hiệu là 
+$x \succ x'$.
+
+\begin{definition}[Hàm scoring]
+Một \textbf{hàm scoring} (hay hàm ranking) là ánh xạ 
+$f: \mathcal{X} \to \mathbb{R}$ sao cho với mọi cặp 
+$(x, x')$ có $x \succ x'$, ta mong muốn:
+\[
+  f(x) > f(x').
+\]
+Nói cách khác, điểm dữ liệu được ưu tiên hơn sẽ nhận điểm số 
+(score) cao hơn.
+\end{definition}
+
+\begin{definition}[Ranking loss]
+\label{def:rankingloss}
+Cho hàm scoring $f: \mathcal{X} \to \mathbb{R}$, 
+\textbf{ranking loss} (hay pairwise loss) trên một cặp 
+$(x, x')$ với $x \succ x'$ được định nghĩa là:
+\[
+  \ell(f, (x, x')) = \mathbf{1}[f(x) < f(x')] 
+  + \frac{1}{2}\mathbf{1}[f(x) = f(x')],
+\]
+trong đó $\mathbf{1}[\cdot]$ là hàm chỉ thị. Ranking loss 
+bằng $1$ khi $f$ xếp nhầm thứ tự, bằng $\frac{1}{2}$ khi 
+$f$ không phân biệt được hai điểm, và bằng $0$ khi $f$ 
+xếp đúng.
+\end{definition}
+
+\subsubsection{Ví dụ minh hoạ}
+
+\begin{example}
+Xét bài toán xếp hạng kết quả tìm kiếm với 
+$\mathcal{X} = \mathbb{R}^2$, trong đó mỗi điểm dữ liệu 
+$x = (x_1, x_2)$ biểu diễn một trang web với hai đặc trưng: 
+$x_1$ là số từ khớp với truy vấn, $x_2$ là độ uy tín của trang.
+
+Giả sử ta có hai trang web $x = (5, 0.8)$ và $x' = (3, 0.4)$, 
+và nhãn $x \succ x'$ (trang $x$ liên quan hơn). Xét hàm scoring 
+tuyến tính $f(x) = w_1 x_1 + w_2 x_2$ với $w_1 = w_2 = 1$:
+\[
+  f(x) = 5 + 0.8 = 5.8, \quad f(x') = 3 + 0.4 = 3.4.
+\]
+Vì $f(x) = 5.8 > 3.4 = f(x')$, hàm $f$ xếp đúng thứ tự, 
+ranking loss bằng $0$.
+\end{example}
+
+\subsubsection{Thiết lập học thống kê}
+
+Giả sử các cặp $(x, x')$ được lấy mẫu độc lập từ một phân 
+phối $\mathcal{D}$ trên $\mathcal{X} \times \mathcal{X}$. 
+\textbf{Ranking loss tổng quát} (generalization ranking loss) 
+của hàm scoring $f$ được định nghĩa là:
+\[
+  R(f) = \Pr_{(x,x') \sim \mathcal{D}}[f(x) < f(x')] 
+       + \frac{1}{2}\Pr_{(x,x') \sim \mathcal{D}}[f(x) = f(x')].
+\]
+
+Cho tập huấn luyện $S = \{(x_1, x_1'), \ldots, (x_m, x_m')\}$ 
+gồm $m$ cặp lấy mẫu i.i.d. từ $\mathcal{D}$, 
+\textbf{ranking loss thực nghiệm} được tính là:
+\[
+  \hat{R}_S(f) = \frac{1}{m} \sum_{i=1}^{m} 
+  \left( \mathbf{1}[f(x_i) < f(x_i')] 
+  + \frac{1}{2}\mathbf{1}[f(x_i) = f(x_i')] \right).
+\]
+
+Mục tiêu của thuật toán học là tìm hàm $f$ trong lớp giả thuyết 
+$\mathcal{H}$ sao cho $R(f)$ nhỏ nhất có thể, dựa trên thông tin 
+từ tập huấn luyện $S$.
+
+\subsection{Generalization Bounds}
+\label{sec:genbounds}
+
+Mục tiêu của phần này là trả lời câu hỏi: \textit{Nếu một hàm 
+scoring $f$ có ranking loss thực nghiệm nhỏ trên tập huấn luyện, 
+liệu ranking loss tổng quát của nó có nhỏ không?} Để trả lời, 
+ta dẫn xuất các chặn tổng quát hoá (generalization bounds) cho 
+bài toán ranking dựa trên Rademacher complexity.
+
+\subsubsection{Quan sát cốt lõi: Ranking như Classification trên cặp}
+
+Ý tưởng then chốt là \textbf{quy bài toán ranking về bài toán 
+phân loại nhị phân trên không gian các cặp}. 
+
+Cho lớp hàm scoring $\mathcal{H}$ trên $\mathcal{X}$, ta định 
+nghĩa lớp hàm tương ứng trên không gian cặp 
+$\mathcal{X} \times \mathcal{X}$:
+\[
+  \mathcal{G} = \{ g : (x, x') \mapsto f(x) - f(x') \mid f \in \mathcal{H} \}.
+\]
+Khi đó, với mỗi cặp $(x, x')$ có $x \succ x'$:
+\begin{align*}
+  \ell(f, (x,x')) &= \mathbf{1}[f(x) < f(x')] + \tfrac{1}{2}\mathbf{1}[f(x) = f(x')] \\
+                  &= \mathbf{1}[g(x,x') < 0] + \tfrac{1}{2}\mathbf{1}[g(x,x') = 0].
+\end{align*}
+Đây chính xác là dạng \textbf{0-1 loss} của bài toán phân loại 
+nhị phân, trong đó $g(x,x')$ đóng vai trò như hàm phân loại 
+và nhãn luôn là $+1$ (vì $x \succ x'$).
+
+\subsubsection{Rademacher Complexity của lớp hàm ranking}
+
+\begin{lemma}
+\label{lem:rademacher_ranking}
+Cho lớp hàm scoring $\mathcal{H}$ trên $\mathcal{X}$ và tập mẫu 
+cặp $S = \{(x_1, x_1'), \ldots, (x_m, x_m')\}$. Khi đó Rademacher 
+complexity thực nghiệm của $\mathcal{G}$ thoả mãn:
+\[
+  \hat{\mathfrak{R}}_S(\mathcal{G}) \leq 2\hat{\mathfrak{R}}_{S^+}(\mathcal{H}),
+\]
+trong đó $S^+ = \{x_1, x_1', x_2, x_2', \ldots, x_m, x_m'\}$ là 
+tập gồm $2m$ điểm đơn lẻ.
+\end{lemma}
+
+\begin{proof}
+Theo định nghĩa:
+\begin{align*}
+  \hat{\mathfrak{R}}_S(\mathcal{G}) 
+  &= \mathbb{E}_{\boldsymbol{\sigma}}\left[
+      \sup_{f \in \mathcal{H}} \frac{1}{m} \sum_{i=1}^{m} 
+      \sigma_i (f(x_i) - f(x_i'))
+    \right] \\
+  &= \mathbb{E}_{\boldsymbol{\sigma}}\left[
+      \sup_{f \in \mathcal{H}} \frac{1}{m} 
+      \left( \sum_{i=1}^{m} \sigma_i f(x_i) 
+           - \sum_{i=1}^{m} \sigma_i f(x_i') \right)
+    \right].
+\end{align*}
+Vì $\sigma_i$ và $-\sigma_i$ có cùng phân phối (đối xứng quanh 0), 
+ta có $-\sigma_i f(x_i') \overset{d}{=} \sigma_i' f(x_i')$ với 
+$\sigma_i'$ là biến Rademacher độc lập. Áp dụng bất đẳng thức 
+tam giác cho $\sup$:
+\begin{align*}
+  \hat{\mathfrak{R}}_S(\mathcal{G}) 
+  &\leq \mathbb{E}_{\boldsymbol{\sigma}}\left[
+      \sup_{f \in \mathcal{H}} \frac{1}{m} \sum_{i=1}^{m} \sigma_i f(x_i)
+    \right]
+  + \mathbb{E}_{\boldsymbol{\sigma}'}\left[
+      \sup_{f \in \mathcal{H}} \frac{1}{m} \sum_{i=1}^{m} \sigma_i' f(x_i')
+    \right] \\
+  &= 2\hat{\mathfrak{R}}_{S^+}(\mathcal{H}).
+\end{align*}
+\end{proof}
+
+\subsubsection{Định lý chặn tổng quát hoá chính}
+
+\begin{theorem}[Generalization bound cho Ranking]
+\label{thm:ranking_bound}
+Cho lớp hàm scoring $\mathcal{H}$ với $f: \mathcal{X} \to [0,1]$ 
+với mọi $f \in \mathcal{H}$. Cho $S = \{(x_i, x_i')\}_{i=1}^m$ 
+lấy mẫu i.i.d. từ phân phối $\mathcal{D}$ trên 
+$\mathcal{X} \times \mathcal{X}$. Khi đó với mọi $\delta > 0$, 
+với xác suất ít nhất $1 - \delta$ trên việc chọn mẫu $S$, 
+đồng thời với mọi $f \in \mathcal{H}$:
+\[
+  \boxed{R(f) \leq \hat{R}_S(f) + 4\hat{\mathfrak{R}}_{S^+}(\mathcal{H}) 
+  + \sqrt{\frac{\log(2/\delta)}{2m}}.}
+\]
+\end{theorem}
+
+\begin{proof}
+Chứng minh gồm ba bước.
+
+\textbf{Bước 1: Áp dụng bất đẳng thức McDiarmid.}
+
+Xét hàm $\Phi(S) = \sup_{f \in \mathcal{H}} [R(f) - \hat{R}_S(f)]$. 
+Khi thay một cặp $(x_i, x_i')$ bằng $(z_i, z_i')$, giá trị 
+$\hat{R}_S(f)$ thay đổi không quá $\frac{1}{m}$ với mọi $f$, 
+do đó $\Phi$ thay đổi không quá $\frac{1}{m}$. Theo bất đẳng thức 
+McDiarmid:
+\[
+  \Pr\left[\Phi(S) - \mathbb{E}[\Phi(S)] \geq \epsilon\right] 
+  \leq \exp\left(-2m\epsilon^2\right).
+\]
+Đặt vế phải bằng $\delta/2$ và giải ra $\epsilon$:
+\[
+  \Phi(S) \leq \mathbb{E}_S[\Phi(S)] + \sqrt{\frac{\log(2/\delta)}{2m}}.
+\]
+
+\textbf{Bước 2: Chặn $\mathbb{E}_S[\Phi(S)]$ bằng Rademacher complexity.}
+
+Dùng kỹ thuật đối xứng hoá (symmetrization) chuẩn với ghost sample 
+$S' = \{(x_i'', x_i''')\}_{i=1}^m$ độc lập và cùng phân phối với $S$:
+\begin{align*}
+  \mathbb{E}_S[\Phi(S)] 
+  &= \mathbb{E}_S\left[\sup_{f} (R(f) - \hat{R}_S(f))\right] \\
+  &\leq \mathbb{E}_{S,S'}\left[\sup_{f} 
+      (\hat{R}_{S'}(f) - \hat{R}_S(f))\right] \\
+  &= \mathbb{E}_{S,S',\boldsymbol{\sigma}}\left[\sup_{f} 
+      \frac{1}{m}\sum_{i=1}^m \sigma_i 
+      (\ell(f,(x_i'',x_i''')) - \ell(f,(x_i,x_i')))\right] \\
+  &\leq 2\mathbb{E}_{S,\boldsymbol{\sigma}}\left[\sup_{f} 
+      \frac{1}{m}\sum_{i=1}^m \sigma_i \ell(f,(x_i,x_i'))\right] \\
+  &= 2\hat{\mathfrak{R}}_S(\mathcal{L} \circ \mathcal{G}).
+\end{align*}
+
+\textbf{Bước 3: Áp dụng Bổ đề~\ref{lem:rademacher_ranking} và 
+bổ đề Talagrand.}
+
+Vì hàm loss $\ell$ là 1-Lipschitz theo $g(x,x') = f(x) - f(x')$, 
+theo bổ đề contraction của Talagrand:
+\[
+  \hat{\mathfrak{R}}_S(\mathcal{L} \circ \mathcal{G}) 
+  \leq \hat{\mathfrak{R}}_S(\mathcal{G}) 
+  \leq 2\hat{\mathfrak{R}}_{S^+}(\mathcal{H}).
+\]
+Kết hợp ba bước lại:
+\[
+  R(f) \leq \hat{R}_S(f) + 4\hat{\mathfrak{R}}_{S^+}(\mathcal{H}) 
+  + \sqrt{\frac{\log(2/\delta)}{2m}}.
+\]
+\end{proof}
+
+\begin{morong}
+\begin{lemma}[Bổ đề contraction -- Talagrand]
+\label{lem:talagrand}
+Cho $\phi: \mathbb{R} \to \mathbb{R}$ là hàm $L$-Lipschitz 
+(tức là $|\phi(a) - \phi(b)| \leq L|a-b|$ với mọi $a,b$) 
+và $\mathcal{G}$ là lớp hàm trên $\mathcal{X}$. Khi đó:
+\[
+  \hat{\mathfrak{R}}_S(\phi \circ \mathcal{G}) 
+  \leq L \cdot \hat{\mathfrak{R}}_S(\mathcal{G}).
+\]
+\end{lemma}
+
+\begin{proof}
+Theo định nghĩa Rademacher complexity:
+\begin{align*}
+  \hat{\mathfrak{R}}_S(\phi \circ \mathcal{G})
+  &= \mathbb{E}_{\boldsymbol{\sigma}}\left[
+      \sup_{g \in \mathcal{G}} \frac{1}{m}
+      \sum_{i=1}^m \sigma_i \phi(g(x_i))
+    \right].
+\end{align*}
+Cố định $\boldsymbol{\sigma}$ và xét $g^* = \arg\sup_{g} 
+\sum_i \sigma_i \phi(g(x_i))$. Đặt $g^0$ là hàm thoả 
+$g^0(x_i) = 0$ với mọi $i$. Ta có:
+\begin{align*}
+  \sum_{i=1}^m \sigma_i \phi(g^*(x_i))
+  &= \sum_{i=1}^m \sigma_i [\phi(g^*(x_i)) - \phi(0)] 
+   + \sum_{i=1}^m \sigma_i \phi(0) \\
+  &\leq \sum_{i=1}^m |\phi(g^*(x_i)) - \phi(0)| 
+   + \left|\sum_{i=1}^m \sigma_i\right| \cdot |\phi(0)| \\
+  &\leq L \sum_{i=1}^m |g^*(x_i)| 
+   + \left|\sum_{i=1}^m \sigma_i\right| \cdot |\phi(0)|.
+\end{align*}
+Lấy kỳ vọng theo $\boldsymbol{\sigma}$ và dùng tính chất 
+$\mathbb{E}[\sigma_i] = 0$:
+\[
+  \hat{\mathfrak{R}}_S(\phi \circ \mathcal{G})
+  \leq L \cdot \mathbb{E}_{\boldsymbol{\sigma}}\left[
+      \sup_{g \in \mathcal{G}} \frac{1}{m}
+      \sum_{i=1}^m \sigma_i g(x_i)
+    \right]
+  = L \cdot \hat{\mathfrak{R}}_S(\mathcal{G}).
+\]
+\end{proof}
+
+Áp dụng vào chứng minh Định lý~\ref{thm:ranking_bound}: 
+hàm ranking loss $\ell(t) = \mathbf{1}[t < 0] + 
+\frac{1}{2}\mathbf{1}[t=0]$ là $1$-Lipschitz, do đó 
+$L = 1$ và:
+\[
+  \hat{\mathfrak{R}}_S(\mathcal{L} \circ \mathcal{G}) 
+  \leq \hat{\mathfrak{R}}_S(\mathcal{G}).
+\]
+\end{morong}
+
+\subsubsection{Ý nghĩa của chặn}
+
+Định lý~\ref{thm:ranking_bound} cho thấy ba thành phần kiểm soát 
+generalization:
+
+\begin{itemize}
+  \item $\hat{R}_S(f)$: Ranking loss trên tập huấn luyện — càng 
+  nhỏ càng tốt.
+  
+  \item $4\hat{\mathfrak{R}}_{S^+}(\mathcal{H})$: Độ phức tạp của 
+  lớp hàm $\mathcal{H}$ — lớp hàm càng phức tạp thì chặn càng lỏng, 
+  dễ overfit hơn.
+  
+  \item $\sqrt{\frac{\log(2/\delta)}{2m}}$: Hạng tử thống kê — 
+  giảm theo $O(1/\sqrt{m})$ khi số mẫu $m$ tăng.
+\end{itemize}
+
+\begin{morong}
+\subsubsection*{Ví dụ phản chứng: Điều kiện bounded là cần thiết}
+
+Định lý~\ref{thm:ranking_bound} yêu cầu $f: \mathcal{X} \to [0,1]$. 
+Ta xây dựng ví dụ cho thấy nếu bỏ điều kiện này, chặn có thể 
+không còn hữu ích.
+
+Xét $\mathcal{X} = \{-1, +1\}$ và lớp hàm 
+$\mathcal{H}_c = \{f_c : x \mapsto cx \mid c > 0\}$ 
+không bị chặn. Với tập mẫu $S = \{(x_i, x_i')\}$ gồm $m$ 
+cặp bất kỳ, Rademacher complexity là:
+\[
+  \hat{\mathfrak{R}}_{S^+}(\mathcal{H}_c) 
+  = \mathbb{E}_{\boldsymbol{\sigma}}\left[
+      \sup_{c > 0} \frac{c}{m} \sum_{i} \sigma_i x_i
+    \right].
+\]
+Khi $\sum_i \sigma_i x_i > 0$, $\sup_{c>0}$ đạt $+\infty$. 
+Do đó $\hat{\mathfrak{R}}_{S^+}(\mathcal{H}_c) = +\infty$ 
+với xác suất dương, khiến chặn trong 
+Định lý~\ref{thm:ranking_bound} trở nên vô nghĩa.
+
+Điều này cho thấy điều kiện $f$ có giá trị trong $[0,1]$ 
+(hoặc tổng quát hơn là bị chặn) là \textbf{cần thiết} để 
+chặn tổng quát hoá có ý nghĩa thực tế.
+\end{morong}
+
+\begin{example}
+Xét $\mathcal{H}$ là lớp hàm tuyến tính chuẩn hoá: 
+$\mathcal{H} = \{x \mapsto \mathbf{w}^\top x \mid \|\mathbf{w}\| \leq \Lambda, 
+\|x\| \leq r\}$. Từ Chương~5, Rademacher complexity của lớp này thoả:
+\[
+  \hat{\mathfrak{R}}_{S^+}(\mathcal{H}) \leq \frac{r\Lambda}{\sqrt{2m}}.
+\]
+Thay vào Định lý~\ref{thm:ranking_bound}:
+\[
+  R(f) \leq \hat{R}_S(f) + \frac{4r\Lambda}{\sqrt{2m}} 
+  + \sqrt{\frac{\log(2/\delta)}{2m}}.
+\]
+Khi $m \to \infty$, hai hạng tử sau đều về $0$, tức là hàm 
+scoring học được sẽ tổng quát hoá tốt.
+\end{example}
+
+\subsection{Ranking with SVMs}
+\label{sec:svmranking}
+
+Phần này mở rộng bài toán tối ưu hoá SVM sang không gian các cặp 
+dữ liệu. Ý tưởng cốt lõi là: thay vì phân loại từng điểm $x$, 
+ta \textbf{phân loại từng cặp} $(x, x')$ — cụ thể là phân loại 
+xem hiệu $f(x) - f(x')$ có dương hay không.
+
+\subsubsection{Nhắc lại SVM phân loại}
+
+Trong SVM phân loại nhị phân (Chương~5), với tập huấn luyện 
+$\{(z_i, y_i)\}_{i=1}^n$ trong đó $y_i \in \{-1, +1\}$, ta 
+tìm siêu phẳng $\mathbf{w}^\top \phi(z) + b$ tối ưu hoá:
+\[
+  \min_{\mathbf{w}, b, \boldsymbol{\xi}} 
+  \frac{1}{2}\|\mathbf{w}\|^2 + C\sum_{i=1}^n \xi_i
+\]
+\[
+  \text{s.t. } y_i(\mathbf{w}^\top \phi(z_i) + b) \geq 1 - \xi_i, 
+  \quad \xi_i \geq 0, \quad \forall i.
+\]
+
+\subsubsection{Bài toán tối ưu hoá SVM Ranking}
+
+Trong bài toán ranking, tập huấn luyện gồm $m$ cặp 
+$\{(x_i, x_i')\}_{i=1}^m$ với $x_i \succ x_i'$. Ta muốn 
+tìm hàm scoring tuyến tính $f(x) = \mathbf{w}^\top \phi(x)$ 
+sao cho $f(x_i) > f(x_i')$ với mọi $i$.
+
+Đặt $\delta_i = \phi(x_i) - \phi(x_i')$. Khi đó điều kiện 
+$f(x_i) > f(x_i')$ tương đương với:
+\[
+  \mathbf{w}^\top \delta_i > 0.
+\]
+Đây chính xác là bài toán phân loại nhị phân trên không gian 
+cặp, với vector đặc trưng $\delta_i$ và nhãn $+1$. Áp dụng 
+SVM soft-margin:
+
+\begin{definition}[Bài toán SVM Ranking]
+\label{def:svmranking}
+Bài toán tối ưu hoá \textbf{SVM Ranking} được phát biểu như sau:
+\[
+  \min_{\mathbf{w}, \boldsymbol{\xi}} 
+  \frac{1}{2}\|\mathbf{w}\|^2 + C\sum_{i=1}^m \xi_i
+\]
+\[
+  \text{s.t. } \mathbf{w}^\top(\phi(x_i) - \phi(x_i')) 
+  \geq 1 - \xi_i, \quad \xi_i \geq 0, \quad \forall i \in [m].
+\]
+trong đó $C > 0$ là tham số điều chỉnh đánh đổi giữa độ rộng 
+margin và số lỗi huấn luyện, $\xi_i$ là biến bù (slack variable).
+\end{definition}
+
+\subsubsection{Bài toán đối ngẫu (Dual Problem)}
+
+Áp dụng nhân tử Lagrange, bài toán đối ngẫu của 
+Định nghĩa~\ref{def:svmranking} là:
+\[
+  \max_{\boldsymbol{\alpha}} 
+  \sum_{i=1}^m \alpha_i 
+  - \frac{1}{2} \sum_{i,j=1}^m \alpha_i \alpha_j 
+    K_\Delta(i, j)
+\]
+\[
+  \text{s.t. } 0 \leq \alpha_i \leq C, \quad \forall i \in [m],
+\]
+trong đó kernel trên không gian cặp được định nghĩa là:
+\[
+  K_\Delta(i,j) = \langle \delta_i, \delta_j \rangle 
+  = K(x_i, x_j) - K(x_i, x_j') - K(x_i', x_j) + K(x_i', x_j'),
+\]
+với $K(x, x') = \langle \phi(x), \phi(x') \rangle$ là kernel gốc.
+
+Nghiệm nguyên thuỷ được phục hồi qua:
+\[
+  \mathbf{w}^* = \sum_{i=1}^m \alpha_i \delta_i 
+  = \sum_{i=1}^m \alpha_i (\phi(x_i) - \phi(x_i')).
+\]
+
+\subsubsection{Dự đoán và margin}
+
+Sau khi học được $\mathbf{w}^*$, hàm scoring được dùng để xếp 
+hạng một điểm mới $x$ là:
+\[
+  f(x) = \mathbf{w}^{*\top} \phi(x) 
+  = \sum_{i=1}^m \alpha_i (K(x_i, x) - K(x_i', x)).
+\]
+Với hai điểm $x$ và $x'$ cần so sánh, ta kết luận $x \succ x'$ 
+nếu $f(x) > f(x')$, tức là:
+\[
+  \sum_{i=1}^m \alpha_i 
+  \big(K(x_i,x) - K(x_i',x) - K(x_i,x') + K(x_i',x')\big) > 0.
+\]
+
+\subsubsection{So sánh với SVM phân loại}
+
+Bảng~\ref{tab:svm_compare} tóm tắt điểm tương đồng và khác biệt 
+giữa SVM phân loại và SVM Ranking.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcc}
+\hline
+\textbf{Đặc điểm} & \textbf{SVM Phân loại} & \textbf{SVM Ranking} \\
+\hline
+Không gian đầu vào & $\mathcal{X}$ & $\mathcal{X} \times \mathcal{X}$ \\
+Vector đặc trưng & $\phi(x)$ & $\phi(x) - \phi(x')$ \\
+Nhãn huấn luyện & $y \in \{-1,+1\}$ & $x \succ x'$ (luôn $+1$) \\
+Kernel & $K(x,x')$ & $K_\Delta(i,j)$ \\
+Số ràng buộc & $n$ & $m$ (số cặp) \\
+\hline
+\end{tabular}
+\caption{So sánh SVM phân loại và SVM Ranking.}
+\label{tab:svm_compare}
+\end{table}
+
+\begin{example}
+Xét $\mathcal{X} = \mathbb{R}^2$ với kernel tuyến tính 
+$K(x,x') = x^\top x'$. Cho tập huấn luyện gồm 3 cặp:
+$(x_1, x_1') = ((3,2),(1,1))$, 
+$(x_2, x_2') = ((4,1),(2,3))$, 
+$(x_3, x_3') = ((2,4),(1,2))$.
+
+Các vector hiệu là:
+\begin{align*}
+  \delta_1 &= (3,2) - (1,1) = (2,1), \\
+  \delta_2 &= (4,1) - (2,3) = (2,-2), \\
+  \delta_3 &= (2,4) - (1,2) = (1,2).
+\end{align*}
+Bài toán SVM Ranking trở thành tìm $\mathbf{w} \in \mathbb{R}^2$ 
+sao cho $\mathbf{w}^\top \delta_i \geq 1$ với $i = 1,2,3$, 
+đồng thời tối thiểu $\|\mathbf{w}\|^2$.
+\end{example}
+
+\begin{morong}
+\subsubsection*{Phân tích độ phức tạp tính toán}
+
+So sánh độ phức tạp giữa SVM phân loại và SVM Ranking:
+
+\begin{itemize}
+  \item \textbf{SVM phân loại}: Bài toán QP với $n$ biến 
+  $\alpha_i$ và $n$ ràng buộc — độ phức tạp 
+  $O(n^2)$ đến $O(n^3)$ tuỳ solver.
+
+  \item \textbf{SVM Ranking}: Bài toán QP với $m$ biến, 
+  trong đó $m$ là số cặp huấn luyện. Nếu có $p$ điểm 
+  dữ liệu gốc thì $m = O(p^2)$ trong trường hợp xấu nhất 
+  (tất cả các cặp). Do đó độ phức tạp là 
+  $O(p^4)$ đến $O(p^6)$ — \textbf{đắt hơn nhiều} so với 
+  SVM phân loại trên cùng tập dữ liệu gốc.
+\end{itemize}
+
+\textbf{Hệ quả thực tế:} Trong ứng dụng, người ta thường 
+chỉ lấy mẫu một tập con các cặp thay vì dùng toàn bộ 
+$O(p^2)$ cặp, đánh đổi giữa độ chính xác và tốc độ huấn 
+luyện. Đây là một trong những động lực để phát triển các 
+thuật toán ranking hiệu quả hơn như RankBoost 
+(Mục~\ref{sec:rankboost}).
+\end{morong}
