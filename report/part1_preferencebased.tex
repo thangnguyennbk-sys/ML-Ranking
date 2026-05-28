@@ -301,19 +301,47 @@ Tại mỗi bước đệ quy, một phần tử \emph{pivot} $u$ được chọ
 \end{itemize}
 Thuật toán đệ quy trên mảng bên trái và bên phải, sau đó ghép nối kết quả.
 
-% \begin{center}
-% \begin{tikzpicture}[
-%     box/.style={draw, rounded corners, minimum width=2.2cm, minimum height=0.7cm, align=center, font=\small},
-%     arr/.style={->, >=stealth, thick}
-% ]
-%     \node[box, fill=yellow!20] (pivot) at (0,0) {Pivot $u$ \\ (chọn ngẫu nhiên)};
-%     \node[box, fill=blue!10] (left) at (-3.5,-1.5) {Bên trái \\ $\{v: h(v,u) > \text{rand}\}$};
-%     \node[box, fill=red!10] (right) at (3.5,-1.5) {Bên phải \\ $\{v: h(u,v) > \text{rand}\}$};
-%     \draw[arr] (pivot.south west) -- (left.north east) node[midway, left, font=\scriptsize, sloped] {xác suất $h(v,u)$};
-%     \draw[arr] (pivot.south east) -- (right.north west) node[midway, right, font=\scriptsize, sloped] {xác suất $h(u,v)$};
-%     \node[font=\scriptsize, gray] at (0,-2.2) {Kết quả: [đệ quy trái] $+$ [$u$] $+$ [đệ quy phải]};
-% \end{tikzpicture}
-% \end{center}
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+    boxa/.style={draw, rounded corners=6pt, align=center,
+                 minimum width=3.5cm, minimum height=1.1cm, font=\small},
+    node distance=0pt
+]
+    \node[boxa, fill=yellow!25, draw=orange!60]
+        (pivot) at (0,0)
+        {\textbf{Pivot $u$} \\ \scriptsize chọn ngẫu nhiên từ $X$};
+
+    \node[boxa, fill=teal!15, draw=teal!50]
+        (left) at (-3.6,-3.0) {\textbf{Bên trái} \\ \scriptsize $\{v: h(v,u)>\text{rand}\}$};
+
+    \node[boxa, fill=purple!12, draw=purple!40]
+        (right) at (3.6,-3.0) {\textbf{Bên phải} \\ \scriptsize $\{v: h(u,v)>\text{rand}\}$};
+
+    \node[boxa, fill=gray!10, draw=gray!40, minimum width=7.0cm]
+        (result) at (0,-5.8)
+        {\scriptsize Kết quả: [đệ quy trái] $+$ [$u$] $+$ [đệ quy phải]};
+
+    % Diagonal arrows Pivot → Left/Right (straight lines touching box corners)
+    \draw[->, >=stealth, thick]
+        (pivot.south west) -- (left.north east)
+        node[midway, above left, font=\scriptsize] {xác suất $h(v,u)$};
+
+    \draw[->, >=stealth, thick]
+        (pivot.south east) -- (right.north west)
+        node[midway, above right, font=\scriptsize] {xác suất $h(u,v)$};
+
+    % L-shape arrows Left/Right → Result
+    \draw[->, >=stealth, thick]
+        (left.south) -- ++(0,-0.55) -| ([xshift=-1.2cm]result.north);
+
+    \draw[->, >=stealth, thick]
+        (right.south) -- ++(0,-0.55) -| ([xshift=1.2cm]result.north);
+\end{tikzpicture}
+\caption{Thuật toán QuickSort ngẫu nhiên dựa trên hàm ưu tiên $h$.
+Tính chất cốt lõi: $\Pr[\mathcal{A}_{\mathrm{QS}} \text{ xếp } u \text{ trước } v] = h(u,v)$,
+dẫn đến mất mát kỳ vọng bằng đúng $L(h, \sigma^*)$ — không có hệ số nhân 2.}
+\end{figure}
 
 \begin{theorem}[Chặn hiệu năng cho QuickSort ngẫu nhiên -- Định lý 10.4 mở rộng]
 \label{thm:quicksort_pref}
@@ -521,20 +549,77 @@ Giá trị NDCG cao (0.985) cho thấy thứ hạng dự đoán rất gần vớ
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[scale=0.9]
-    % Draw ranking positions
-    \foreach \i/\rel/\col in {1/3/blue!60, 2/2/blue!40, 3/0/gray!30, 4/1/blue!20, 5/0/gray!30} {
-        \draw[fill=\col, draw=black] (\i*2-2, 0) rectangle (\i*2-0.2, \rel*0.5+0.1);
-        \node[font=\small] at (\i*2-1.1, -0.3) {Vị trí $\i$};
-        \node[font=\small, white] at (\i*2-1.1, \rel*0.25+0.05) {\ifnum\rel>0 $r=\rel$\fi};
-    }
-    % Discount line
-    \draw[red, thick, dashed] plot[smooth] coordinates {(0.5,1.0) (1.9,0.63) (3.9,0.5) (5.9,0.43) (7.9,0.39)};
-    \node[red, font=\small] at (8.5, 0.39) {$c_i$};
+    \def\barw{0.65}
+    \def\gap{0.2}
     % Axes
-    \draw[->] (-0.2,0) -- (9.5,0) node[right, font=\small] {Vị trí $i$};
-    \draw[->] (0,-0.5) -- (0,1.8) node[above, font=\small] {Điểm liên quan $r_i$ (trọng số $c_i$)};
+    \draw[->] (-0.3,0) -- (10.0,0) node[right,font=\small] {Vị trí $i$};
+    \draw[->] (0,-0.1) -- (0,3.6) node[above,font=\small] {$r_i$, $3 \cdot c_i$};
+
+    % Tick marks and labels on y-axis
+    \foreach \y/\lab in {1/1, 2/2, 3/3} {
+        \draw (-0.08,\y) -- (0.08,\y);
+        \node[left,font=\scriptsize] at (-0.05,\y) {\lab};
+    }
+
+    % Bars: positions 1..5 centered at x = 1.3, 3.0, 4.7, 6.4, 8.1
+    \def\xone{1.30}
+    \def\xtwo{3.00}
+    \def\xthree{4.70}
+    \def\xfour{6.40}
+    \def\xfive{8.10}
+
+    % Bar 1: r=3
+    \fill[blue!55, opacity=0.85]
+        (\xone-\barw/2, 0) rectangle (\xone+\barw/2, 3);
+    \draw[blue!70] (\xone-\barw/2, 0) rectangle (\xone+\barw/2, 3);
+    \node[white, font=\scriptsize\bfseries] at (\xone, 2.5) {$r{=}3$};
+
+    % Bar 2: r=2
+    \fill[blue!45, opacity=0.75]
+        (\xtwo-\barw/2, 0) rectangle (\xtwo+\barw/2, 2);
+    \draw[blue!60] (\xtwo-\barw/2, 0) rectangle (\xtwo+\barw/2, 2);
+    \node[white, font=\scriptsize\bfseries] at (\xtwo, 1.5) {$r{=}2$};
+
+    % Bar 3: r=0 (empty, just axis tick)
+    % Bar 4: r=1
+    \fill[blue!30, opacity=0.65]
+        (\xfour-\barw/2, 0) rectangle (\xfour+\barw/2, 1);
+    \draw[blue!45] (\xfour-\barw/2, 0) rectangle (\xfour+\barw/2, 1);
+    \node[blue!80, font=\scriptsize\bfseries] at (\xfour, 0.5) {$r{=}1$};
+
+    % Bar 5: r=0 (empty)
+
+    % X-axis labels
+    \foreach \x/\lab in {\xone/1, \xtwo/2, \xthree/3, \xfour/4, \xfive/5} {
+        \draw (\x, -0.07) -- (\x, 0.07);
+        \node[below, font=\scriptsize] at (\x, -0.05) {Vị trí $\lab$};
+    }
+
+    % Discount curve c_i = 1/log2(i+1):
+    %   c1 = 1.0   -> (\xone,  1.0) -- top of bar 1? No, we scale to data coords.
+    %   We want c_i drawn in the same y-scale as r.
+    %   c1=1.0, c2≈0.631, c3=0.5, c4≈0.431, c5≈0.387
+    %   Multiply by 3 so c1 starts at y=3.0 (top of bar 1)
+    %   c1=3.0, c2≈1.893, c3=1.5, c4≈1.292, c5≈1.161
+    \draw[red!70, thick, dashed]
+        (\xone,  3.000) ..controls (\xone+0.3, 3.0) and (\xtwo-0.3, 1.893)..
+        (\xtwo,  1.893) ..controls (\xtwo+0.3, 1.893) and (\xthree-0.3, 1.5)..
+        (\xthree,1.500) ..controls (\xthree+0.3,1.5) and (\xfour-0.3, 1.292)..
+        (\xfour, 1.292) ..controls (\xfour+0.3, 1.292) and (\xfive-0.3, 1.161)..
+        (\xfive, 1.161);
+
+    % Endpoint label
+    \node[red!70, right, font=\small] at (\xfive+0.05, 1.161) {$c_i$};
+
+    % Legend
+    \fill[blue!45, opacity=0.75] (4.6, 3.2) rectangle (5.0, 3.5);
+    \node[right, font=\scriptsize] at (5.05, 3.35) {Điểm liên quan $r_i$};
+    \draw[red!70, thick, dashed] (4.6, 2.8) -- (5.0, 2.8);
+    \node[right, font=\scriptsize] at (5.05, 2.8) {Hệ số chiết khấu $c_i$};
 \end{tikzpicture}
-\caption{Minh họa DCG: cột màu xanh là điểm liên quan $r_i$ tại mỗi vị trí, đường đỏ là hệ số chiết khấu $c_i$ giảm dần. DCG là tổng tích $c_i \cdot r_i$ trên tất cả vị trí.}
+\caption{Minh họa DCG: cột màu xanh là điểm liên quan $r_i$ tại mỗi vị trí,
+đường đỏ nét đứt là hệ số chiết khấu $c_i = \frac{1}{\log_2(i+1)}$ giảm dần,
+bắt đầu từ $c_1 = 1.0$ (đỉnh cột đầu tiên). DCG là tổng tích $c_i \cdot r_i$.}
 \label{fig:dcg_visual}
 \end{figure}
 
