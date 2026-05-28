@@ -13,7 +13,7 @@ Các thuật toán được cài đặt bao gồm:
 Mã nguồn đầy đủ nằm trong thư mục \texttt{code/}, hoạt động độc lập và không phụ thuộc vào các thư viện học máy cấp cao như \texttt{scikit-learn} hay \texttt{libsvm} cho các chức năng huấn luyện cốt lõi.
 
 \subsection{Thiết lập Dữ liệu Giả lập (Synthetic Data)}
-Để đảm bảo tính kiểm soát và khả năng kiểm chứng chính xác các thuộc tính toán học, dữ liệu giả lập được sinh ra thông qua module \texttt{data_generator.py}:
+Để đảm bảo tính kiểm soát và khả năng kiểm chứng chính xác các thuộc tính toán học, dữ liệu giả lập được sinh ra thông qua module \texttt{data\_generator.py}:
 \begin{itemize}
     \item \textbf{Dữ liệu Phân hạng Cặp (Pairwise Ranking)}: Gồm $N = 150$ mẫu với $d = 5$ hoặc $d = 8$ đặc trưng. Điểm số thực tế (relevance score) được tính theo mô hình phi tuyến:
     $$y_i^* = w^T x_i + 0.5 \sin(x_{i,0}) + 0.3 (x_{i,1} \cdot x_{i,2}) + \epsilon_i$$

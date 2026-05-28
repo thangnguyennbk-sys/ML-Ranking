@@ -46,6 +46,7 @@
 \fancyhead[L]{\small\textcolor{HCMUSGray}{CSC14005 -- Machine Learning}}
 \fancyhead[R]{\small\textcolor{HCMUSGray}{HCMUS}}
 \fancyfoot[C]{\small\thepage}
+\setlength{\headheight}{24.02pt}
 \renewcommand{\headrulewidth}{0.4pt}
 \renewcommand{\headrule}{\hbox to\headwidth{\color{HCMUSGray}\leaders\hrule height \headrulewidth\hfill}}
 
@@ -64,6 +65,26 @@
   textfont=small,
   justification=centering,
   singlelinecheck=false
+}
+\setlength{\emergencystretch}{3em}
+\raggedbottom
+\makeatletter
+\newcommand{\sectionbreakifneeded}{%
+  \par
+  \begingroup
+  \dimen@=.42\textheight
+  \dimen@ii=\pagegoal
+  \advance\dimen@ii by -\pagetotal
+  \ifdim\dimen@>\dimen@ii\newpage\fi
+  \endgroup
+}
+\makeatother
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  keepspaces=true
 }
 
 % \renewcommand{\arraystretch}{1.16}
@@ -94,6 +115,30 @@
     title=MỞ RỘNG
 }
 
+\newtcolorbox{remark}{
+    enhanced,
+    breakable,
+    colback=blue!5,
+    colframe=blue!50!black,
+    title=Nhận xét
+}
+
+\newtcolorbox{lienhe_ly_thuyet}{
+    enhanced,
+    breakable,
+    colback=blue!5,
+    colframe=blue!50!black,
+    title=Liên hệ lý thuyết
+}
+
+\newtcolorbox{nhan_xet_box}{
+    enhanced,
+    breakable,
+    colback=blue!5,
+    colframe=blue!50!black,
+    title=Nhận xét
+}
+
 % --- Math commands ---
 \newcommand{\E}{\mathbb{E}}
 \newcommand{\R}{\mathbb{R}}
@@ -105,6 +150,7 @@
 \newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
 \DeclareMathOperator{\sign}{sgn}
 \DeclareMathOperator{\conv}{conv}
+\DeclareMathOperator{\sort}{sort}
 \DeclareMathOperator*{\argmin}{arg\,min}
 \DeclareMathOperator*{\argmax}{arg\,max}
 
@@ -128,6 +174,8 @@
     \par\medskip\noindent\textbf{Định lý~\thetheorem\envsuffix.}\itshape
 }{\par\medskip\normalfont}
 
+\newenvironment{dinh_ly}[1][]{\begin{theorem}[#1]}{\end{theorem}}
+
 \NewDocumentEnvironment{lemma}{ O{} g g }{
     \refstepcounter{lemma}
     \IfNoValueTF{#2}{\def\envtitle{#1}}{\def\envtitle{#2}}
@@ -136,6 +184,8 @@
     \par\medskip\noindent\textbf{Bổ đề~\thelemma\envsuffix.}\itshape
 }{\par\medskip\normalfont}
 
+\newenvironment{bo_de}[1][]{\begin{lemma}[#1]}{\end{lemma}}
+
 \NewDocumentEnvironment{definition}{ O{} g g }{
     \refstepcounter{definition}
     \IfNoValueTF{#2}{\def\envtitle{#1}}{\def\envtitle{#2}}
@@ -143,6 +193,8 @@
     \IfNoValueF{#3}{\label{def:#3}}
     \par\medskip\noindent\textbf{Định nghĩa~\thedefinition\envsuffix.}
 }{\par\medskip}
+
+\newenvironment{dinh_nghia}[1][]{\begin{definition}[#1]}{\end{definition}}
 
 \NewDocumentEnvironment{corollary}{ O{} g g }{
     \refstepcounter{corollary}
@@ -215,22 +267,33 @@
 \input{part1_preferencebased}
 
 % ===== PHẦN 2: THỰC NGHIỆM =====
-\newpage
+\sectionbreakifneeded
 \input{part2_experiments}
 
 % ===== PHẦN 3: NGHIÊN CỨU TIÊN TIẾN =====
-\newpage
+\sectionbreakifneeded
 \section{Phần 3: Nghiên cứu tiên tiến liên quan}
 
 % Thành viên 5 - Nhân
 \input{part3_paper1}
-\newpage
+\sectionbreakifneeded
 \input{part3_paper2}
 
 % ===== KẾT LUẬN =====
-\newpage
+\sectionbreakifneeded
 \section{Kết luận}
-\textit{(Cả nhóm tổng hợp đóng góp và hướng phát triển)}
+
+Chương Ranking cho thấy bài toán học máy không chỉ dừng ở việc dự đoán một nhãn đúng hay sai, mà còn cần học một quan hệ thứ tự có ý nghĩa giữa các đối tượng. Trong cài đặt score-based ranking, mô hình học một hàm điểm $h:\mathcal{X}\to\mathbb{R}$ rồi suy ra thứ hạng bằng cách so sánh các giá trị điểm. Cách nhìn này giúp đưa ranking về các bài toán quen thuộc hơn như phân loại nhị phân trên cặp mẫu, tối ưu lề trong Ranking SVM, hoặc tối ưu surrogate loss trong RankBoost. Tuy nhiên, nó cũng làm rõ một hạn chế quan trọng: một hàm điểm luôn sinh ra thứ tự có tính bắc cầu, trong khi quan hệ ưu tiên thực tế có thể không bắc cầu.
+
+Về mặt lý thuyết, báo cáo đã trình bày các định nghĩa rủi ro xếp hạng, sai số thực nghiệm, các chặn tổng quát hóa dựa trên Rademacher complexity, Ranking SVM, RankBoost, bipartite ranking, ROC/AUC và preference-based ranking. Các chứng minh chính đều đi theo tinh thần của giáo trình: chuyển bài toán ranking thành kiểm soát sai số trên các cặp, sau đó dùng margin, convex surrogate hoặc phân tích độ phức tạp giả thuyết để thu được bảo đảm học. Đặc biệt, RankBoost minh họa rõ mối liên hệ giữa boosting và tối ưu hóa theo tọa độ: mỗi vòng chọn một weak ranker để giảm exponential loss, còn sai số thực nghiệm được chặn bởi tích các hệ số chuẩn hóa $Z_t$. Với bipartite ranking, mối liên hệ giữa rủi ro xếp hạng và AUC cho thấy AUC không chỉ là một độ đo thực nghiệm, mà còn là một cách diễn đạt trực tiếp xác suất một mẫu dương được xếp cao hơn một mẫu âm.
+
+Phần thực nghiệm cài đặt các thuật toán chính từ đầu bằng Python, không dùng thư viện học máy cấp cao cho phần huấn luyện cốt lõi. Các thí nghiệm trên dữ liệu tổng hợp kiểm chứng ba ý quan trọng: sai số RankBoost giảm phù hợp với chặn lý thuyết, bipartite ranking có quan hệ định lượng với AUC, và RankBoost có thể tận dụng weak ranker phi tuyến đơn giản để đạt sai số tốt hơn Ranking SVM tuyến tính trên dữ liệu có cấu trúc phi tuyến. Các hình vẽ được dùng để nối phần công thức với trực giác: đường hội tụ cho thấy vai trò của $Z_t$, ROC mô tả đánh đổi giữa true positive rate và false positive rate, còn biểu đồ so sánh giúp thấy khác biệt giữa hai họ thuật toán.
+
+Phần nghiên cứu liên quan mở rộng nội dung chương theo hai hướng. Bài báo \textit{Active Bipartite Ranking} mở rộng nội dung ROC/AUC sang thiết lập active learning, nơi thuật toán phải chọn nhãn cần hỏi để giảm chi phí dữ liệu. Bài báo về các ``tricks'' trong Learning to Rank hiện đại cho thấy các ý tưởng surrogate loss, smoothing và lựa chọn cặp lân cận vẫn là trung tâm trong các hệ thống GBDT-based LTR sau này. Như vậy, lý thuyết trong chương không bị tách khỏi thực hành, mà là nền tảng để hiểu các thuật toán ranking hiện đại hơn.
+
+Báo cáo vẫn có một số hạn chế. Thứ nhất, phần thực nghiệm chủ yếu dùng dữ liệu tổng hợp để kiểm soát giả thiết, nên chưa phản ánh đầy đủ nhiễu, mất cân bằng truy vấn và đặc trưng thưa trong các bộ dữ liệu Learning to Rank thực tế. Thứ hai, các cài đặt từ đầu ưu tiên tính minh họa và khả năng đọc hiểu, chưa tối ưu cho quy mô lớn. Thứ ba, chương tập trung nhiều vào ranking cổ điển dựa trên score và pairwise comparison, trong khi các hướng hiện đại như neural ranking, listwise optimization, fairness trong ranking và learning from implicit feedback chỉ mới được liên hệ ở mức tổng quan.
+
+Các hướng mở tự nhiên là thử nghiệm trên các bộ dữ liệu chuẩn như LETOR hoặc MSLR-WEB, mở rộng weak ranker của RankBoost từ decision stump sang cây sâu hơn, so sánh thêm các surrogate loss listwise cho NDCG, và nghiên cứu ảnh hưởng của tie-breaking trong AUC khi điểm số rời rạc. Một hướng khác là nối preference-based ranking với các mô hình neural ranker: thay vì ép mọi quan hệ ưu tiên về một thứ tự tuyến tính duy nhất, ta có thể học trực tiếp cấu trúc ưu tiên phức tạp hơn. Nhìn chung, chương Ranking cung cấp một khung nền tảng đủ chặt chẽ để hiểu cả lý thuyết tổng quát hóa lẫn các thiết kế thuật toán thực tế trong học xếp hạng.
 
 % ===== TÀI LIỆU THAM KHẢO =====
 \bibliographystyle{plainnat}
