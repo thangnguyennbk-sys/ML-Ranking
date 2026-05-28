@@ -32,15 +32,15 @@ Báo cáo trình bày toàn diện Chương 10, chia thành ba phần chính:
 
 #### Phần 1 — Lý thuyết
 
-| Mục | Nội dung | Thành viên phụ trách |
-|---|---|---|
-| 10.1 | Phát biểu hình thức bài toán ranking, hàm scoring, ranking loss | Trần Kim Ngọc |
-| 10.2 | Generalization Bounds dựa trên Rademacher Complexity | Trần Kim Ngọc |
-| 10.3 | SVM Ranking: bài toán primal, đối ngẫu, kernel trên cặp | Trần Kim Ngọc |
-| 10.4 | Thuật toán RankBoost, tương đương Coordinate Descent | Nguyễn Thành Nguyên |
-| 10.5 | Bipartite Ranking, AUC, BipartiteRankBoost $\mathcal{O}(m+n)$ | Nguyễn Thành Nguyên |
-| 10.6 | Preference-based Setting, Sort-by-Degree, QuickSort ngẫu nhiên | Trần Đình Luân |
-| 10.7 | Các tiêu chí xếp hạng: Precision, AP, MAP, DCG, NDCG | Trần Đình Luân |
+| Mục | Nội dung |
+|---|---|
+| 10.1 | Phát biểu hình thức bài toán ranking, hàm scoring, ranking loss |
+| 10.2 | Generalization Bounds dựa trên Rademacher Complexity |
+| 10.3 | SVM Ranking: bài toán primal, đối ngẫu, kernel trên cặp |
+| 10.4 | Thuật toán RankBoost, tương đương Coordinate Descent |
+| 10.5 | Bipartite Ranking, AUC, BipartiteRankBoost $\mathcal{O}(m+n)$ |
+| 10.6 | Preference-based Setting, Sort-by-Degree, QuickSort ngẫu nhiên |
+| 10.7 | Các tiêu chí xếp hạng: Precision, AP, MAP, DCG, NDCG |
 
 #### Phần 2 — Thực nghiệm
 
