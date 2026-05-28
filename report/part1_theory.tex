@@ -19,7 +19,7 @@ tương đối} giữa các điểm. Nói cách khác, điều quan trọng khô
 là điểm dữ liệu $x$ được gán nhãn gì, mà là liệu $x$ có đứng 
 \textit{trước} hay \textit{sau} $x'$ trong thứ tự xếp hạng.
 
-Chương 9 của~\cite{mohri2018foundations} trình bày một cách hệ thống 
+Chương 10 của~\cite{mohri2018foundations} trình bày một cách hệ thống 
 các nền tảng lý thuyết cho bài toán ranking, bao gồm:
 
 \begin{itemize}
@@ -841,19 +841,19 @@ thuật toán ranking hiệu quả hơn như RankBoost
 Ba mục vừa trình bày tạo thành một mạch lý thuyết nhất quán:
 
 \begin{itemize}
-  \item \textbf{9.1 $\to$ 9.2:} Định nghĩa ranking loss và 
+  \item \textbf{10.1 $\to$ 10.2:} Định nghĩa ranking loss và 
   generalization loss (Mục~\ref{sec:problem}) là tiền đề để 
   đặt câu hỏi: liệu minimizing $\hat{R}_S(f)$ có đảm bảo 
   $R(f)$ nhỏ không? Câu trả lời chính là 
   Định lý~\ref{thm:ranking_bound}.
 
-  \item \textbf{9.2 $\to$ 9.3:} Chặn tổng quát hoá cho thấy 
+  \item \textbf{10.2 $\to$ 10.3:} Chặn tổng quát hoá cho thấy 
   cần kiểm soát $\hat{\mathfrak{R}}_{S^+}(\mathcal{H})$. 
   SVM Ranking (Mục~\ref{sec:svmranking}) thực hiện điều này 
   bằng cách ràng buộc $\|\mathbf{w}\|$ qua số hạng 
   regularization $\frac{1}{2}\|\mathbf{w}\|^2$.
 
-  \item \textbf{9.3 $\to$ 9.4:} SVM Ranking có độ phức tạp 
+  \item \textbf{10.3 $\to$ 10.4:} SVM Ranking có độ phức tạp 
   $O(p^4)$ khi $p$ điểm tạo ra $O(p^2)$ cặp — không khả thi 
   với dữ liệu lớn. Đây là động lực chính để phát triển 
   RankBoost (Mục~\ref{sec:rankboost}), thuật toán hiệu quả 

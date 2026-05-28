@@ -6,16 +6,14 @@
 \usepackage[vietnamese]{babel}
 \usepackage{amsmath,amssymb,amsthm,mathtools}
 \usepackage{bm}
-\usepackage{graphicx}
+\usepackage{graphicx}\usepackage[dvipsnames]{xcolor}
+\usepackage{caption}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
 \usepackage{geometry}
 \geometry{left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
 \usepackage{hyperref}
-\hypersetup{
-    colorlinks=true,
-    linkcolor=blue,
-    citecolor=blue,
-    urlcolor=blue
-}
+
 \usepackage{listings}
 \usepackage[dvipsnames]{xcolor}
 \usepackage{booktabs}
@@ -30,6 +28,60 @@
 \usepackage{algorithmic}
 \usepackage{xparse}
 \usepackage{etoolbox}
+
+\definecolor{HCMUSBlue}{HTML}{153E6F}
+\definecolor{HCMUSLightBlue}{HTML}{EAF1F8}
+\definecolor{HCMUSGray}{HTML}{777777}
+\definecolor{TableLine}{HTML}{2E4F73}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=HCMUSBlue,
+  citecolor=HCMUSBlue,
+  urlcolor=HCMUSBlue
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{HCMUSGray}{CSC14005 -- Machine Learning}}
+\fancyhead[R]{\small\textcolor{HCMUSGray}{HCMUS}}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{HCMUSGray}\leaders\hrule height \headrulewidth\hfill}}
+
+\titleformat{\section}
+  {\Large\bfseries\color{HCMUSBlue}}
+  {\thesection.}{0.65em}{}[\vspace{-0.15em}\titlerule]
+\titleformat{\subsection}
+  {\large\bfseries\color{HCMUSBlue}}
+  {\thesubsection.}{0.55em}{}
+\titleformat{\subsubsection}
+  {\normalsize\bfseries\color{HCMUSBlue}}
+  {\thesubsubsection.}{0.5em}{}
+
+\captionsetup{
+  labelfont={bf,color=HCMUSBlue},
+  textfont=small,
+  justification=centering,
+  singlelinecheck=false
+}
+
+% \renewcommand{\arraystretch}{1.16}
+% \setlength{\parskip}{0.42em}
+% \setlength{\parindent}{0pt}
+% \setcounter{tocdepth}{3}
+% \setcounter{secnumdepth}{3}
+% \emergencystretch=3em
+% \sloppy
+% \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+% \newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+% \newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+% \newcommand{\adult}{\textit{Adult Census Income }}
+% \newcommand{\codepath}[1]{\begingroup\small\ttfamily\nolinkurl{#1}\endgroup}
+% \newcommand{\figfull}[2]{\begin{figure}[htbp]\centering\includegraphics[width=0.96\textwidth]{#1}\caption{#2}\end{figure}}
+% \newcommand{\fignarrow}[2]{\begin{figure}[htbp]\centering\includegraphics[width=0.76\textwidth]{#1}\caption{#2}\end{figure}}
+
+
 
 % --- Thêm cho phần lý thuyết ---
 \usepackage{tcolorbox}
@@ -108,34 +160,58 @@
 }{\par\medskip}
 
 % --- Title Page ---
-\title{
-    \textbf{ĐỒ ÁN 2: MỘT SỐ CHỦ ĐỀ NỀN TẢNG TRONG HỌC MÁY}\\
-    \Large{Chương 9: BÀI TOÁN PHÂN HẠNG (RANKING)}
-}
-\author{
-    \textbf{Nhóm 5 Thành viên} \\
-    Môn học: Nhập môn Học máy (CSC14005) \\
-    Học kỳ 2 -- Lớp: 2025/2026
-}
-\date{\today}
+% \title{
+%     \textbf{ĐỒ ÁN 2: MỘT SỐ CHỦ ĐỀ NỀN TẢNG TRONG HỌC MÁY}\\
+%     \Large{Chương 10: BÀI TOÁN PHÂN HẠNG (RANKING)}
+% }
+% \author{
+%     \textbf{Nhóm 5 Thành viên} \\
+%     Môn học: Nhập môn Học máy (CSC14005) \\
+%     Học kỳ 2 -- Lớp: 2025/2026
+% }
+% \date{\today}
 
 \begin{document}
 
-\maketitle
-\newpage
+\begin{titlepage}
+\thispagestyle{empty}
+\centering
+\vspace*{1.15cm}
+{\Large \textbf{ĐẠI HỌC QUỐC GIA TP. HỒ CHÍ MINH}}\\[0.15cm]
+{\Large \textbf{TRƯỜNG ĐẠI HỌC KHOA HỌC TỰ NHIÊN}}\\[0.25cm]
+{\large Khoa Công nghệ Thông tin}\\[2.0cm]
+
+{\color{HCMUSBlue}\rule{0.68\linewidth}{0.7pt}}\\[0.75cm]
+{\fontsize{24}{30}\selectfont\bfseries\color{HCMUSBlue} BÁO CÁO ĐỒ ÁN 2}\\[0.45cm]
+{\Large\bfseries CSC14005 -- Machine Learning}\\[0.35cm]
+{\color{HCMUSBlue}\rule{0.68\linewidth}{0.7pt}}\\[1.4cm]
+
+\begin{tabular}{rl}
+\textbf{Nhóm:} & Group\_11 \\[4pt]
+\textbf{Thành viên:} & Nguyễn Mạnh Thắng -- 23120084 \\
+& Trần Kim Ngọc -- 23120062 \\
+& Nguyễn Thành Nguyên -- 23120063 \\
+& Trần Đình Luân -- 23120059 \\
+& Nguyễn Thiện Nhân -- 23120064 \\[4pt]
+\textbf{Năm học:} & 2025--2026
+\end{tabular}
+
+\vfill
+\end{titlepage}
+
 \tableofcontents
 \newpage
 
 % ===== PHẦN 1: LÝ THUYẾT =====
 
-% Thành viên 1 - Ngọc (9.1, 9.2, 9.3)
+% Thành viên 1 - Ngọc (10.1, 10.2, 10.3)
 \input{part1_theory}
 
-% Thành viên 2 - Nguyên (9.4 RankBoost, 9.5 Bipartite)
+% Thành viên 2 - Nguyên (10.4 RankBoost, 10.5 Bipartite)
 \input{part1_rankboost}
 \input{part1_bipartite}
 
-% Thành viên 3 - Luân (9.6 Preference, 9.7 Discussion)
+% Thành viên 3 - Luân (10.6 Preference, 10.7 Other Ranking Criteria)
 \input{part1_preferencebased}
 
 % ===== PHẦN 2: THỰC NGHIỆM =====

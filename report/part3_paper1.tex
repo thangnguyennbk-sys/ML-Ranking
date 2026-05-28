@@ -36,8 +36,8 @@ Rủi ro xếp hạng (rank risk) đo lường xác suất xếp sai thứ tự 
 với $x$ và $x'$ là các mẫu độc lập. Bộ xếp hạng Bayes có dạng $r^*(x, x') = \text{sgn}\bigl(\eta(x) - \eta(x')\bigr)$, trong đó $\eta(x) = \mathbb{P}(y=1 \mid x)$.
 
 \begin{quote}
-\textbf{Liên hệ với lý thuyết (Chương 9):}
-Định nghĩa về rủi ro xếp hạng và bộ xếp hạng Bayes hoàn toàn nhất quán với định nghĩa trong Mục 9.5, Chương 9. Tuy nhiên, bài báo bổ sung thêm khái niệm \emph{hối tiếc xếp hạng} (rank regret) -- một chỉ số mạnh hơn đo lường khoảng cách đến hiệu suất tối ưu mà giáo trình chưa xoáy sâu.
+\textbf{Liên hệ với lý thuyết (Chương 10):}
+Định nghĩa về rủi ro xếp hạng và bộ xếp hạng Bayes hoàn toàn nhất quán với định nghĩa trong Mục 10.5, Chương 10. Tuy nhiên, bài báo bổ sung thêm khái niệm \emph{hối tiếc xếp hạng} (rank regret) -- một chỉ số mạnh hơn đo lường khoảng cách đến hiệu suất tối ưu mà giáo trình chưa xoáy sâu.
 \end{quote}
 
 \subsubsection{Trường hợp Hàm mất mát 0/1}
@@ -70,8 +70,8 @@ Cho $\ell$ là hàm mất mát margin cân bằng trọng số. Hối tiếc x�
 \end{align}
 
 \begin{quote}
-\textbf{Liên hệ với lý thuyết (Chương 9):}
-Chứng minh của bài báo sử dụng \textbf{kỹ thuật rút gọn} xếp hạng về phân loại bằng cách tạo không gian mới gồm các cặp mẫu $\tilde{x} = (x, x')$. Đây chính là kỹ thuật nền tảng được dùng trong Chương 9 để xây dựng thuật toán RankSVM (Mục 9.3) và RankBoost (Mục 9.4). Đặc biệt, bài báo đã chứng minh được tính \emph{nhất quán} -- tức là hối tiếc của các hàm mục tiêu này tiến về 0 sẽ kéo theo hối tiếc phân hạng tiến về 0.
+\textbf{Liên hệ với lý thuyết (Chương 10):}
+Chứng minh của bài báo sử dụng \textbf{kỹ thuật rút gọn} xếp hạng về phân loại bằng cách tạo không gian mới gồm các cặp mẫu $\tilde{x} = (x, x')$. Đây chính là kỹ thuật nền tảng được dùng trong Chương 10 để xây dựng thuật toán RankSVM (Mục 10.3) và RankBoost (Mục 10.4). Đặc biệt, bài báo đã chứng minh được tính \emph{nhất quán} -- tức là hối tiếc của các hàm mục tiêu này tiến về 0 sẽ kéo theo hối tiếc phân hạng tiến về 0.
 \end{quote}
 
 \subsubsection{Thực nghiệm kiểm chứng}
@@ -101,7 +101,7 @@ Bài báo so sánh ba thuật toán trên các tập dữ liệu thực (tất c
 \end{table}
 
 \textbf{Nhận xét kết quả:}
-Thuật toán SVM-OR (tương đương RankSVM trong Mục 9.3) đôi khi cho kết quả tốt hơn nhưng độ chênh lệch vô cùng nhỏ. Đặc biệt, \textbf{Logistic loss cạnh tranh ngang ngửa} với SVM-OR dù chỉ cần độ phức tạp tính toán $O(n)$ thay vì $O(mn)$. Điều này xác nhận về mặt thực nghiệm các luận điểm lý thuyết: tối thiểu hóa hàm mất mát đơn biến phù hợp hoàn toàn có khả năng phân hạng xuất sắc.
+Thuật toán SVM-OR (tương đương RankSVM trong Mục 10.3) đôi khi cho kết quả tốt hơn nhưng độ chênh lệch vô cùng nhỏ. Đặc biệt, \textbf{Logistic loss cạnh tranh ngang ngửa} với SVM-OR dù chỉ cần độ phức tạp tính toán $O(n)$ thay vì $O(mn)$. Điều này xác nhận về mặt thực nghiệm các luận điểm lý thuyết: tối thiểu hóa hàm mất mát đơn biến phù hợp hoàn toàn có khả năng phân hạng xuất sắc.
 
 \subsubsection{Đánh giá phê bình và hướng mở rộng}
 
@@ -114,7 +114,7 @@ Thuật toán SVM-OR (tương đương RankSVM trong Mục 9.3) đôi khi cho k�
 \textbf{Hạn chế \& Câu hỏi mở:}
 \begin{itemize}
     \item Các hằng số trong chặn hối tiếc có thể vẫn chưa phải là tối ưu nhất.
-    \item Các phân tích tập trung chủ yếu ở cấp độ phân phối xác suất (population level), chưa đi sâu vào tốc độ hội tụ hữu hạn mẫu (finite-sample) như một số định lý trong Chương 9.
+    \item Các phân tích tập trung chủ yếu ở cấp độ phân phối xác suất (population level), chưa đi sâu vào tốc độ hội tụ hữu hạn mẫu (finite-sample) như một số định lý trong Chương 10.
     \item Cần thêm nghiên cứu để mở rộng bài toán sang các bối cảnh phức tạp hơn như k-partite ranking hoặc áp dụng trên các tiêu chuẩn đo lường tối ưu công cụ tìm kiếm như NDCG.
 \end{itemize}
 

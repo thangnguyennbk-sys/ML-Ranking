@@ -592,7 +592,7 @@ Sự bất cập này của chỉ số AUC là động lực chính để các n
 
 Để hoàn thành trọn vẹn Yêu cầu số 5 của đề tài đồ án về việc ``Khảo sát mối liên hệ giữa các nội dung lý thuyết'', chúng tôi tiến hành phân tích sâu sắc các kết nối toán học hữu cơ giữa nội dung phân hạng (Chương 10) với các chương nền tảng khác trong cuốn sách \textit{Foundations of Machine Learning}:
 
-\paragraph{1. Bipartite RankBoost $\leftrightarrow$ AdaBoost (liên hệ riêng của Mục 10.5.1)}
+\paragraph{1. Bipartite RankBoost $\leftrightarrow$ AdaBoost (liên hệ riêng của Section 10.5.1)}
 \begin{itemize}
     \item \textbf{Không lặp lại liên hệ tổng quát}: Phần RankBoost đã giải thích sự tương tự giữa RankBoost và AdaBoost ở mức boosting/exponential loss. Ở đây, giáo trình xét một quan hệ chặt hơn chỉ xuất hiện trong bipartite ranking: mục tiêu RankBoost phân rã thành tích của hai thành phần lớp dương và lớp âm, còn mục tiêu AdaBoost tương ứng là tổng của hai thành phần đó:
     \[
@@ -618,7 +618,7 @@ Sự bất cập này của chỉ số AUC là động lực chính để các n
 
 \paragraph{2. Chặn sai số RankBoost $\leftrightarrow$ Rademacher Complexity (Kết nối với Chương 3 - Generalization Bounds)}
 \begin{itemize}
-    \item \textbf{Cơ sở đo lường năng lực học tập}: Sai số phân hạng thực tế $R(h)$ được chặn trên thông qua Rademacher Complexity của không gian giả thuyết $\Hcal$ theo Định lý 10.2 và Hệ quả 10.4. Độ phức tạp Rademacher (định nghĩa tại Chương 3) đóng vai trò đo lường khả năng khớp nhiễu ngẫu nhiên của tập giả thuyết $\Hcal$.
+    \item \textbf{Cơ sở đo lường năng lực học tập}: Sai số phân hạng thực tế $R(h)$ được chặn trên thông qua Rademacher Complexity của không gian giả thuyết $\Hcal$ theo Theorem 10.2 và Hệ quả 10.4. Độ phức tạp Rademacher (định nghĩa tại Chương 3) đóng vai trò đo lường khả năng khớp nhiễu ngẫu nhiên của tập giả thuyết $\Hcal$.
     \item \textbf{Sự phân tách Rademacher trong Bipartite}: Khác với phân loại nhị phân thông thường (chỉ có một số hạng Rademacher trên tập mẫu chung), chặn lề phân hạng nhị phân phân tách độ phức tạp Rademacher thành hai thành phần riêng biệt $R^{D^+}_m(\Hcal)$ và $R^{D^-}_n(\Hcal)$ tương ứng trên không gian mẫu dương $S^+$ (kích thước $m$) và mẫu âm $S^-$ (kích thước $n$). Đây là điểm tinh tế toán học cực kỳ quan trọng: trong khi Corollary 10.4 tổng quát dùng chung kích thước mẫu $m$ cho cả hai số hạng Rademacher (do chọn mẫu theo cặp), thì trong bipartite setting cụ thể, ta có $m$ mẫu tích cực độc lập từ $D^+$ và $n$ mẫu tiêu cực độc lập từ $D^-$, dẫn đến hai Rademacher terms sử dụng độc lập hai sample sizes khác nhau là $m$ và $n$.
 \end{itemize}
 

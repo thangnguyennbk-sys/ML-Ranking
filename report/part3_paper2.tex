@@ -40,8 +40,8 @@ Cho một truy vấn $q$ với tập tài liệu $\{x_1, \ldots, x_{n_q}\}$ và 
 \]
 
 \begin{lienhe_ly_thuyet}
-  \textbf{Liên hệ với Chương 9 [FML] --- Cài đặt Score-based Ranking:} \\
-  Định nghĩa bài toán này ánh xạ trực tiếp vào \textbf{Mục 9.1} của giáo trình, nơi bài toán xếp hạng trong cài đặt score-based được xây dựng chính thức. Hàm cho điểm $h: \mathcal{X} \to \mathbb{R}$ (ký hiệu $f$ trong bài báo) xác định một thứ tự tuyến tính trên tập tài liệu. Giáo trình nhấn mạnh rằng dù hàm ưu tiên (preference function) thực tế có thể \emph{không chuyển vị} (non-transitive), thứ hạng do $f$ tạo ra luôn chuyển vị --- đây chính là hạn chế cơ bản của cài đặt score-based mà bài báo kế thừa và khai thác trong thiết kế hàm surrogate.
+  \textbf{Liên hệ với Chương 10 [FML] --- Cài đặt Score-based Ranking:} \\
+  Định nghĩa bài toán này ánh xạ trực tiếp vào \textbf{Mục 10.1} của giáo trình, nơi bài toán xếp hạng trong cài đặt score-based được xây dựng chính thức. Hàm cho điểm $h: \mathcal{X} \to \mathbb{R}$ (ký hiệu $f$ trong bài báo) xác định một thứ tự tuyến tính trên tập tài liệu. Giáo trình nhấn mạnh rằng dù hàm ưu tiên (preference function) thực tế có thể \emph{không chuyển vị} (non-transitive), thứ hạng do $f$ tạo ra luôn chuyển vị --- đây chính là hạn chế cơ bản của cài đặt score-based mà bài báo kế thừa và khai thác trong thiết kế hàm surrogate.
 \end{lienhe_ly_thuyet}
 
 \paragraph{Các hàm chất lượng xếp hạng}
@@ -55,8 +55,8 @@ Bài báo xem xét bốn hàm chất lượng phổ biến, chúng thể hiện 
 \end{itemize}
 
 \begin{lienhe_ly_thuyet}
-  \textbf{Liên hệ với Chương 9 [FML] --- Tiêu chí DCG, NDCG và AUC:} \\
-  \textbf{Mục 9.7} của giáo trình giới thiệu DCG và NDCG như những tiêu chí xếp hạng quan trọng trong thực tế, bên cạnh precision@k, average precision và AUC (được phân tích kỹ ở Mục 9.5.2). Bài báo đi xa hơn giáo trình ở chỗ không chỉ định nghĩa các hàm này mà còn đề xuất cách tích hợp chúng trực tiếp vào quá trình tối ưu của thuật toán GBDT, thay vì chỉ dùng để đánh giá kết quả.
+  \textbf{Liên hệ với Chương 10 [FML] --- Tiêu chí DCG, NDCG và AUC:} \\
+  \textbf{Mục 10.7} của giáo trình giới thiệu DCG và NDCG như những tiêu chí xếp hạng quan trọng trong thực tế, bên cạnh precision@k, average precision và AUC (được phân tích kỹ ở Mục 10.5.2). Bài báo đi xa hơn giáo trình ở chỗ không chỉ định nghĩa các hàm này mà còn đề xuất cách tích hợp chúng trực tiếp vào quá trình tối ưu của thuật toán GBDT, thay vì chỉ dùng để đánh giá kết quả.
 \end{lienhe_ly_thuyet}
 
 % ============================================================
@@ -90,8 +90,8 @@ StochasticRank (Ustimenko \& Prokhorenkova, 2020) không xây dựng cận trên
 \end{nhan_xet_box}
 
 \begin{lienhe_ly_thuyet}
-  \textbf{Liên hệ với Chương 9 [FML] --- Kỹ thuật Surrogate Loss:} \\
-  Giáo trình (Mục 9.4.2) phân tích RankBoost như một thuật toán tối thiểu hóa hàm surrogate lồi (exponential loss) của hàm pairwise misranking rời rạc thông qua coordinate descent. Bài báo mở rộng tư tưởng này sang bộ ba LambdaMART / YetiLoss / StochasticRank, nhưng đặt câu hỏi quan trọng hơn: \emph{chất lượng} của hàm surrogate quan trọng hơn hay \emph{tính lồi} của nó? Kết quả thực nghiệm cho thấy cận trên lồi được xây dựng cẩn thận (YetiLoss) thường vượt trội so với tối ưu trực tiếp hàm không lồi (StochasticRank).
+  \textbf{Liên hệ với Chương 10 [FML] --- Kỹ thuật Surrogate Loss:} \\
+  Giáo trình (Mục 10.4.2) phân tích RankBoost như một thuật toán tối thiểu hóa hàm surrogate lồi (exponential loss) của hàm pairwise misranking rời rạc thông qua coordinate descent. Bài báo mở rộng tư tưởng này sang bộ ba LambdaMART / YetiLoss / StochasticRank, nhưng đặt câu hỏi quan trọng hơn: \emph{chất lượng} của hàm surrogate quan trọng hơn hay \emph{tính lồi} của nó? Kết quả thực nghiệm cho thấy cận trên lồi được xây dựng cẩn thận (YetiLoss) thường vượt trội so với tối ưu trực tiếp hàm không lồi (StochasticRank).
 \end{lienhe_ly_thuyet}
 
 % ============================================================
@@ -136,8 +136,8 @@ YetiLoss chỉ xét cặp với $|p_i - p_j| = 1$ (cặp ngay kề nhau). Thực
 \begin{tcolorbox}\textbf{Hướng phát triển và Câu hỏi mở:}\bfseries
   \begin{enumerate}
     \item \textit{YetiLoss cho Neural Ranker?} Cả ba kỹ thuật (YetiLoss, QueryRMSE, StochasticRank) đều có thể áp dụng thẳng vào mạng nơ-ron. Liệu kết luận ``làm mịn ngẫu nhiên là quan trọng nhất'' có còn giữ nguyên trong bối cảnh neural ranker không?
-    \item \textit{Tích hợp với Preference-based Ranking?} Trong cài đặt học dựa trên sở thích (Mục 9.6 của giáo trình), hàm ưu tiên không cần chuyển vị. Liệu có thể xây dựng một surrogate loss kiểu YetiLoss cho bài toán này, nơi không có thứ hạng tuyến tính tường minh?
-    \item \textit{Khả năng tổng quát hóa (Generalization):} Bài báo chỉ phân tích qua gap train-test. Liệu các đảm bảo Rademacher complexity từ Định lý 9.1 [FML] có thể áp dụng để lý giải tại sao YetiLoss tổng quát hóa tốt hơn LambdaMART không? (Do hàm mục tiêu trơn hơn.)
+    \item \textit{Tích hợp với Preference-based Ranking?} Trong cài đặt học dựa trên sở thích (Mục 10.6 của giáo trình), hàm ưu tiên không cần chuyển vị. Liệu có thể xây dựng một surrogate loss kiểu YetiLoss cho bài toán này, nơi không có thứ hạng tuyến tính tường minh?
+    \item \textit{Khả năng tổng quát hóa (Generalization):} Bài báo chỉ phân tích qua gap train-test. Liệu các đảm bảo Rademacher complexity từ Định lý 10.1 [FML] có thể áp dụng để lý giải tại sao YetiLoss tổng quát hóa tốt hơn LambdaMART không? (Do hàm mục tiêu trơn hơn.)
   \end{enumerate}
 \end{tcolorbox}
 

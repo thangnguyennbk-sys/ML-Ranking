@@ -1,7 +1,7 @@
 \section{Phần 2: Thực nghiệm minh hoạ}
 \label{sec:experiments}
 
-Phần này trình bày chi tiết các thực nghiệm được thiết kế và lập trình hoàn toàn từ đầu (from scratch) bằng Python để kiểm chứng các kết quả lý thuyết trong Chương 9 của giáo trình \textit{Foundations of Machine Learning}. 
+Phần này trình bày chi tiết các thực nghiệm được thiết kế và lập trình hoàn toàn từ đầu (from scratch) bằng Python để kiểm chứng các kết quả lý thuyết trong Chương 10 của giáo trình \textit{Foundations of Machine Learning}. 
 
 Các thuật toán được cài đặt bao gồm:
 \begin{enumerate}
@@ -24,7 +24,7 @@ Mã nguồn đầy đủ nằm trong thư mục \texttt{code/}, hoạt động �
 
 \subsection{Thực nghiệm 1: Sự hội tụ và Chặn sai số lý thuyết của RankBoost}
 \label{subsec:exp1}
-Định lý 9.2 trong sách giáo khoa chỉ ra rằng sai số phân hạng thực nghiệm $\widehat{R}(h)$ của thuật toán RankBoost sau $T$ vòng lặp được chặn trên bởi tích các thừa số chuẩn hóa $Z_t$:
+Theorem 10.2 trong giáo trình chỉ ra rằng sai số phân hạng thực nghiệm $\widehat{R}(h)$ của thuật toán RankBoost sau $T$ vòng lặp được chặn trên bởi tích các thừa số chuẩn hóa $Z_t$:
 $$\widehat{R}(g) \le \prod_{t=1}^T Z_t$$
 Hơn nữa, nếu tồn tại biên $\gamma > 0$ sao cho với mọi $t \in [1, T]$, $\gamma \le \frac{\epsilon_t^+ - \epsilon_t^-}{2}$, thì sai số huấn luyện giảm theo hàm mũ:
 $$\widehat{R}(g) \le \exp(-2\gamma^2 T)$$
@@ -42,7 +42,7 @@ Chúng tôi đã huấn luyện RankBoost với $T = 60$ vòng lặp trên tập
 Đồ thị thực nghiệm cho thấy:
 \begin{enumerate}
     \item Sai số huấn luyện thực tế (đường màu xanh dương nét liền) giảm nhanh chóng và tiệm cận về 0 khi số lượng vòng lặp tăng lên.
-    \item Đường chặn nhân tử chuẩn hóa $\prod Z_t$ (đường màu cam nét liền) luôn nằm phía trên sai số huấn luyện tại mọi điểm, minh chứng thực nghiệm tuyệt đối cho Định lý 9.2.
+    \item Đường chặn nhân tử chuẩn hóa $\prod Z_t$ (đường màu cam nét liền) luôn nằm phía trên sai số huấn luyện tại mọi điểm, minh chứng thực nghiệm tuyệt đối cho Theorem 10.3.
     \item Đường chặn hàm mũ lý thuyết $\exp(-2\gamma^2 t)$ (đường màu đỏ nét chấm) với biên tối thiểu $\gamma \approx 0.046$ biểu thị tốc độ suy giảm tối đa về mặt lý thuyết, hoạt động như một chặn lỏng hơn nhưng ổn định.
     \item Sai số trên tập kiểm thử (nét đứt) cũng đồng thời suy giảm ổn định, cho thấy mô hình không bị quá khớp (overfitting).
 \end{enumerate}
@@ -51,7 +51,7 @@ Chúng tôi đã huấn luyện RankBoost với $T = 60$ vòng lặp trên tập
 \label{subsec:exp2}
 Trong kịch bản bipartite ranking, mục tiêu là sắp xếp các điểm dương cao hơn các điểm âm. Sai số bipartite thực tế $R(h)$ được tính bằng:
 $$R(h) = \frac{1}{mn} \sum_{i=1}^m \sum_{j=1}^n \mathbb{I}[g(x'_i) \le g(x_j)]$$
-Định nghĩa toán học của sách giáo khoa về Area Under the ROC Curve (AUC) là:
+Định nghĩa toán học của giáo trình về Area Under the ROC Curve (AUC) là:
 $$\text{AUC}_{book}(h) = \frac{1}{mn} \sum_{i=1}^m \sum_{j=1}^n \mathbb{I}[g(x'_i) \ge g(x_j)]$$
 Do đó, khi không có hiện tượng trùng điểm số (score ties), mối liên hệ sau đây sẽ được thỏa mãn một cách nghiêm ngặt:
 $$R(h) + \text{AUC}_{book}(h) = 1 \implies R(h) = 1 - \text{AUC}_{book}(h)$$

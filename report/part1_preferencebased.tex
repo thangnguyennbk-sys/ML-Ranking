@@ -1,5 +1,5 @@
 % ============================================================
-% PHẦN 10.6 & 10.7: PREFERENCE-BASED SETTING & OTHER RANKING CRITERIA
+% SECTION 10.6 & 10.7: PREFERENCE-BASED SETTING & OTHER RANKING CRITERIA
 % Thành viên 3 - Biên soạn dựa trên Chương 10: Foundations of Machine Learning (Mohri, 2018)
 % ============================================================
 
@@ -7,7 +7,6 @@
 \subsection{Cách Tiếp Cận Dựa Trên Ưu Tiên (Preference-Based Setting)}
 \label{sec:preference}
 
-% -------- 10.6.0  Động lực --------
 \subsubsection{Động Lực và So Sánh Với Score-Based Setting}
 
 Trong phần trước, chúng ta đã nghiên cứu \emph{score-based setting}: thuật toán học một hàm cho điểm toàn cục $h : \mathcal{X} \to \mathbb{R}$, trong đó thứ hạng của mọi phần tử $x \in \mathcal{X}$ được xác định hoàn toàn bởi điểm số $h(x)$. Cách tiếp cận này có một hạn chế cơ bản: vì $h$ cảm sinh một thứ tự tuyến tính \emph{bắc cầu} trên $\mathcal{X}$, nó không thể biểu diễn chính xác khi hàm ưu tiên thực sự $f$ \emph{không bắc cầu} (ví dụ: ưu tiên theo vòng tròn $f(u,v)=1$, $f(v,w)=1$, $f(w,u)=1$).
@@ -80,7 +79,7 @@ Một thuật toán $\mathcal{A}$ nhận đầu vào là $X$ và hàm ưu tiên 
 \subsubsection{Hàm Mất Mát Và Regret}
 \label{sec:pref_loss}
 
-Để đo mức độ sai lệch giữa thứ hạng dự đoán $\sigma$ và thứ hạng mục tiêu $\sigma^*$ trên tập $X$ có $n \geq 1$ phần tử, sách giáo khoa định nghĩa:
+Để đo mức độ sai lệch giữa thứ hạng dự đoán $\sigma$ và thứ hạng mục tiêu $\sigma^*$ trên tập $X$ có $n \geq 1$ phần tử, giáo trình định nghĩa:
 
 \begin{definition}[Hàm mất mát xếp hạng cặp]
 \begin{equation}
@@ -183,7 +182,7 @@ Xếp hạng theo degree giảm dần: $u \succ v \succ w$, tức $\sigma(u)=1, 
 \end{example}
 
 \paragraph{Chặn lý thuyết cho Sort-by-Degree.}
-\begin{theorem}[Chặn mất mát và regret cho Sort-by-Degree, Định lý 10.4]
+\begin{theorem}[Chặn mất mát và regret cho Sort-by-Degree, Theorem 10.4]
 \label{thm:sort_by_degree}
 Trong cài đặt nhị phân (bipartite), các chặn sau được chứng minh:
 \begin{align}
@@ -229,11 +228,11 @@ which proves \eqref{eq:sbd_loss}. Chặn regret \eqref{eq:sbd_regret} tuân theo
 \end{itemize}
 
 % -------- Lower bound --------
-\subsubsection{Chặn Dưới Cho Thuật Toán Xác Định (Định Lý 10.5)}
+\subsubsection{Chặn Dưới Cho Thuật Toán Xác Định (Theorem 10.5)}
 
 Câu hỏi tự nhiên đặt ra là: liệu có thuật toán xác định nào tốt hơn sort-by-degree, với hệ số nhỏ hơn 2? Câu trả lời là \textbf{không}.
 
-\begin{theorem}[Chặn dưới cho thuật toán xác định -- Định lý 10.5]
+\begin{theorem}[Chặn dưới cho thuật toán xác định -- Theorem 10.5]
 \label{thm:lower_bound_det}
 Với mọi thuật toán xác định $\mathcal{A}$, tồn tại một phân phối bipartite $\mathcal{D}$ sao cho:
 \begin{equation}
@@ -343,7 +342,7 @@ Tính chất cốt lõi: $\Pr[\mathcal{A}_{\mathrm{QS}} \text{ xếp } u \text{ 
 dẫn đến mất mát kỳ vọng bằng đúng $L(h, \sigma^*)$ — không có hệ số nhân 2.}
 \end{figure}
 
-\begin{theorem}[Chặn hiệu năng cho QuickSort ngẫu nhiên -- Định lý 10.4 mở rộng]
+\begin{theorem}[Chặn hiệu năng cho QuickSort ngẫu nhiên -- Theorem 10.4 mở rộng]
 \label{thm:quicksort_pref}
 Ký hiệu $\mathcal{A}_{\mathrm{QS}}$ là thuật toán QuickSort ngẫu nhiên dùng hàm ưu tiên $h$. Trong cài đặt nhị phân:
 \begin{align}
@@ -694,7 +693,7 @@ Cài đặt nhị phân (bipartite) là trường hợp đặc biệt của cả
 \end{itemize}
 
 \paragraph{Liên hệ với lý thuyết tổng quát hóa -- Rademacher Complexity (Chương 3).}
-Mặc dù phần preference-based setting không trình bày chặn tổng quát hóa theo Rademacher complexity một cách tường minh (vì khuôn khổ regret đã đủ), sự liên hệ ngầm vẫn tồn tại: chất lượng của hàm ưu tiên $h$ ở giai đoạn 1 (học từ dữ liệu) được đảm bảo bởi các chặn generalization của Chương 3 và Định lý 10.1. Regret của giai đoạn 2 sau đó được kiểm soát thông qua regret của $h$ như trong các định lý 10.4, 10.5.
+Mặc dù phần preference-based setting không trình bày chặn tổng quát hóa theo Rademacher complexity một cách tường minh (vì khuôn khổ regret đã đủ), sự liên hệ ngầm vẫn tồn tại: chất lượng của hàm ưu tiên $h$ ở giai đoạn 1 (học từ dữ liệu) được đảm bảo bởi các chặn generalization của Chương 3 và Theorem 10.1. Regret của giai đoạn 2 sau đó được kiểm soát thông qua regret của $h$ như trong các theorem 10.4, 10.5.
 
 % -------- Tóm tắt --------
 % \subsubsection{Tóm Tắt Phần Preference-Based Setting}
@@ -705,7 +704,7 @@ Mặc dù phần preference-based setting không trình bày chặn tổng quát
     
 %     \item \textbf{Không cần bắc cầu:} $h$ có thể không bắc cầu, phù hợp với preference thực tế của con người. Đây là ưu điểm cốt lõi so với score-based.
     
-%     \item \textbf{Sort-by-degree:} Hệ số 2, độ phức tạp $\Omega(n^2)$. Định lý 10.5 chứng minh không thể cải thiện hệ số này với thuật toán xác định.
+%     \item \textbf{Sort-by-degree:} Hệ số 2, độ phức tạp $\Omega(n^2)$. Theorem 10.5 chứng minh không thể cải thiện hệ số này với thuật toán xác định.
     
 %     \item \textbf{QuickSort ngẫu nhiên:} Loại bỏ hoàn toàn hệ số 2, đạt $\mathrm{Reg}(\mathcal{A}_{\mathrm{QS}}) \leq \mathrm{Reg}(h)$. Độ phức tạp $O(n \log n)$ hoặc $O(n + k \log k)$ cho top-$k$.
     
