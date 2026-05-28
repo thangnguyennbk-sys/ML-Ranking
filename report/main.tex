@@ -46,6 +46,7 @@
 \fancyhead[L]{\small\textcolor{HCMUSGray}{CSC14005 -- Machine Learning}}
 \fancyhead[R]{\small\textcolor{HCMUSGray}{HCMUS}}
 \fancyfoot[C]{\small\thepage}
+\setlength{\headheight}{24.02pt}
 \renewcommand{\headrulewidth}{0.4pt}
 \renewcommand{\headrule}{\hbox to\headwidth{\color{HCMUSGray}\leaders\hrule height \headrulewidth\hfill}}
 
@@ -64,6 +65,26 @@
   textfont=small,
   justification=centering,
   singlelinecheck=false
+}
+\setlength{\emergencystretch}{3em}
+\raggedbottom
+\makeatletter
+\newcommand{\sectionbreakifneeded}{%
+  \par
+  \begingroup
+  \dimen@=.42\textheight
+  \dimen@ii=\pagegoal
+  \advance\dimen@ii by -\pagetotal
+  \ifdim\dimen@>\dimen@ii\newpage\fi
+  \endgroup
+}
+\makeatother
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  keepspaces=true
 }
 
 % \renewcommand{\arraystretch}{1.16}
@@ -94,6 +115,30 @@
     title=MỞ RỘNG
 }
 
+\newtcolorbox{remark}{
+    enhanced,
+    breakable,
+    colback=blue!5,
+    colframe=blue!50!black,
+    title=Nhận xét
+}
+
+\newtcolorbox{lienhe_ly_thuyet}{
+    enhanced,
+    breakable,
+    colback=blue!5,
+    colframe=blue!50!black,
+    title=Liên hệ lý thuyết
+}
+
+\newtcolorbox{nhan_xet_box}{
+    enhanced,
+    breakable,
+    colback=blue!5,
+    colframe=blue!50!black,
+    title=Nhận xét
+}
+
 % --- Math commands ---
 \newcommand{\E}{\mathbb{E}}
 \newcommand{\R}{\mathbb{R}}
@@ -105,6 +150,7 @@
 \newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
 \DeclareMathOperator{\sign}{sgn}
 \DeclareMathOperator{\conv}{conv}
+\DeclareMathOperator{\sort}{sort}
 \DeclareMathOperator*{\argmin}{arg\,min}
 \DeclareMathOperator*{\argmax}{arg\,max}
 
@@ -128,6 +174,8 @@
     \par\medskip\noindent\textbf{Định lý~\thetheorem\envsuffix.}\itshape
 }{\par\medskip\normalfont}
 
+\newenvironment{dinh_ly}[1][]{\begin{theorem}[#1]}{\end{theorem}}
+
 \NewDocumentEnvironment{lemma}{ O{} g g }{
     \refstepcounter{lemma}
     \IfNoValueTF{#2}{\def\envtitle{#1}}{\def\envtitle{#2}}
@@ -136,6 +184,8 @@
     \par\medskip\noindent\textbf{Bổ đề~\thelemma\envsuffix.}\itshape
 }{\par\medskip\normalfont}
 
+\newenvironment{bo_de}[1][]{\begin{lemma}[#1]}{\end{lemma}}
+
 \NewDocumentEnvironment{definition}{ O{} g g }{
     \refstepcounter{definition}
     \IfNoValueTF{#2}{\def\envtitle{#1}}{\def\envtitle{#2}}
@@ -143,6 +193,8 @@
     \IfNoValueF{#3}{\label{def:#3}}
     \par\medskip\noindent\textbf{Định nghĩa~\thedefinition\envsuffix.}
 }{\par\medskip}
+
+\newenvironment{dinh_nghia}[1][]{\begin{definition}[#1]}{\end{definition}}
 
 \NewDocumentEnvironment{corollary}{ O{} g g }{
     \refstepcounter{corollary}
@@ -215,76 +267,34 @@
 \input{part1_preferencebased}
 
 % ===== PHẦN 2: THỰC NGHIỆM =====
-\newpage
+\sectionbreakifneeded
 \input{part2_experiments}
 
 % ===== PHẦN 3: NGHIÊN CỨU TIÊN TIẾN =====
-\newpage
+\sectionbreakifneeded
 \section{Phần 3: Nghiên cứu tiên tiến liên quan}
 
 % Thành viên 5 - Nhân
 \input{part3_paper1}
-\newpage
+\sectionbreakifneeded
 \input{part3_paper2}
 
 % ===== KẾT LUẬN =====
-\newpage
+\sectionbreakifneeded
 \section{Kết luận}
- 
-Báo cáo này đã trình bày toàn diện Chương 10 -- \textit{Ranking} -- của giáo trình \textit{Foundations of Machine Learning} \citep{mohri2018foundations}, bao gồm nền tảng lý thuyết, cài đặt thực nghiệm và các nghiên cứu tiên tiến liên quan.
- 
-\subsection*{Tóm tắt những đóng góp chính của nhóm}
- 
-\paragraph{Phần lý thuyết (Phần 1).}
-Nhóm đã trình bày đầy đủ và có hệ thống các nội dung cốt lõi của Chương 10 theo cấu trúc từ tổng quát đến chuyên biệt:
- 
-\begin{itemize}
-    \item \textbf{Cài đặt Score-based và Generalization Bounds (Mục 10.1--10.2):} Bài toán ranking được hình thức hoá thông qua hàm scoring $f: \mathcal{X} \to \mathbb{R}$ và hàm mất mát pairwise. Định lý tổng quát hoá chính (Định lý \ref{thm:ranking_bound}) -- liên kết ranking loss thực nghiệm với ranking loss tổng quát thông qua Rademacher complexity -- được chứng minh đầy đủ từng bước, bao gồm cả Bổ đề Talagrand (contraction lemma) mà giáo trình chỉ trích dẫn không chứng minh.
- 
-    \item \textbf{SVM Ranking (Mục 10.3):} Bài toán phân loại trên không gian cặp được phát biểu chính xác dưới dạng bài toán QP, kèm theo phân tích đối ngẫu và so sánh có hệ thống với SVM phân loại thông thường.
- 
-    \item \textbf{RankBoost (Mục 10.4):} Toàn bộ chuỗi lý thuyết của RankBoost được trình bày: từ việc chứng minh sự tương đương với Coordinate Descent, đến chặn sai số thực nghiệm theo hàm mũ (Định lý \ref{thm:rankboost_error}), và Margin Bound cho ensemble (Hệ quả \ref{cor:ensemble_bound}). Đặc biệt, nhóm đã bổ sung ví dụ phản chứng chỉ ra sự sụp đổ của Weak Ranking Assumption khi preference có chu trình không bắc cầu.
- 
-    \item \textbf{Bipartite Ranking và AUC (Mục 10.5):} Tính chất phân rã nhân tử của BipartiteRankBoost được chứng minh tường minh, cho thấy độ phức tạp tính toán giảm từ $\mathcal{O}(mn)$ xuống $\mathcal{O}(m+n)$. Mối liên hệ gradient giữa RankBoost và AdaBoost trong cài đặt nhị phân cũng được phân tích chi tiết. Nhóm cũng chứng minh đầy đủ bài tập Exercise 10.7 về quan hệ giữa binary classification error và bipartite ranking error.
- 
-    \item \textbf{Preference-based Setting (Mục 10.6):} Hai thuật toán giai đoạn 2 -- Sort-by-Degree (xác định) và QuickSort ngẫu nhiên -- được phân tích lý thuyết, kèm theo chứng minh đầy đủ chặn dưới cho thuật toán xác định (Định lý \ref{thm:lower_bound_det}) và kết quả trung tâm về QuickSort (Định lý \ref{thm:quicksort_pref}). Kết quả này khẳng định: \emph{ngẫu nhiên hoá là cần thiết và đủ} để loại bỏ hệ số nhân 2 trong chặn mất mát.
- 
-    \item \textbf{Các tiêu chí xếp hạng thực tế (Mục 10.7):} Precision@$k$, Average Precision, MAP, DCG và NDCG được trình bày hệ thống với các ví dụ tính toán cụ thể và mối liên hệ toán học với AUC.
-\end{itemize}
- 
-\paragraph{Phần thực nghiệm (Phần 2).}
-Ba thực nghiệm được thiết kế và lập trình từ đầu (from scratch) bằng Python đã kiểm chứng các tính chất lý thuyết quan trọng:
- 
-\begin{enumerate}
-    \item Sự hội tụ của RankBoost và tính chặt chẽ của chặn lý thuyết $\prod Z_t$ và $\exp(-2\gamma^2 T)$.
-    \item Hệ thức $R(h) + \mathrm{AUC}(h) = 1$ trong bipartite ranking, kèm phân tích trường hợp có ties (điểm trùng).
-    \item So sánh tốc độ hội tụ và độ chính xác của RankBoost so với Ranking SVM, cho thấy lợi thế của RankBoost khi dữ liệu có cấu trúc phi tuyến.
-\end{enumerate}
- 
-\paragraph{Phần nghiên cứu tiên tiến (Phần 3).}
-Nhóm đã phân tích sâu hai bài báo hiện đại có liên hệ chặt chẽ với lý thuyết trong Chương 10:
- 
-\begin{itemize}
-    \item \textbf{Active Bipartite Ranking} \citep{cheshire2023active}: Bài báo NeurIPS 2023 lấp đầy lỗ hổng lớn trong lý thuyết bằng cách kết hợp Active Learning với Bipartite Ranking. Thuật toán \texttt{active-rank} đạt đảm bảo PAC với chi phí nhãn tối thiểu $\mathcal{O}(\log(1/\delta))$, vượt trội so với chiến lược thụ động cần $\mathcal{O}(1/\epsilon^2)$ nhãn.
- 
-    \item \textbf{Which Tricks are Important for Learning to Rank?} \citep{lyzhin2023tricks}: Bài báo ICML 2023 cung cấp phân tích thực nghiệm thống nhất và đầy đủ nhất từ trước đến nay về các thuật toán GBDT-based LTR. Kết luận chính -- \emph{làm mịn ngẫu nhiên là yếu tố quan trọng nhất, và tính lồi thường có lợi hơn tối ưu trực tiếp không lồi} -- có ý nghĩa thực tiễn lớn và liên kết trực tiếp với tư tưởng surrogate loss từ Mục 10.4.2 của giáo trình.
-\end{itemize}
- 
-\subsection*{Những điểm nổi bật và mở rộng}
- 
-So với phần trình bày gốc trong giáo trình, nhóm đã đóng góp các nội dung mở rộng sau:
- 
-\begin{enumerate}
-    \item \textbf{Chứng minh bổ đề Talagrand đầy đủ} bằng quy nạp toán học (giáo trình chỉ trích dẫn).
-    \item \textbf{Chứng minh tính tương đương RankBoost -- Coordinate Descent} theo từng bước, bao gồm cả line search và tiêu chí chọn hướng tọa độ.
-    \item \textbf{Ví dụ phản chứng về Preference Cycle} chỉ ra điều kiện RankBoost thất bại.
-    \item \textbf{Bổ sung ví dụ phản chứng về tính cần thiết của điều kiện bounded} trong Định lý tổng quát hoá.
-    \item \textbf{Phân tích ví dụ phản chứng về AUC} trong tình huống mất cân bằng dữ liệu.
-    \item \textbf{Chứng minh đầy đủ quan hệ gradient} giữa RankBoost và AdaBoost trong bipartite setting.
-    \item \textbf{Demo thực nghiệm} minh chứng cho Active Bipartite Ranking với ngân sách nhãn giới hạn.
-\end{enumerate}
 
-\newpage
+Chương Ranking cho thấy bài toán học máy không chỉ dừng ở việc dự đoán một nhãn đúng hay sai, mà còn cần học một quan hệ thứ tự có ý nghĩa giữa các đối tượng. Trong cài đặt score-based ranking, mô hình học một hàm điểm $h:\mathcal{X}\to\mathbb{R}$ rồi suy ra thứ hạng bằng cách so sánh các giá trị điểm. Cách nhìn này giúp đưa ranking về các bài toán quen thuộc hơn như phân loại nhị phân trên cặp mẫu, tối ưu lề trong Ranking SVM, hoặc tối ưu surrogate loss trong RankBoost. Tuy nhiên, nó cũng làm rõ một hạn chế quan trọng: một hàm điểm luôn sinh ra thứ tự có tính bắc cầu, trong khi quan hệ ưu tiên thực tế có thể không bắc cầu.
+
+Về mặt lý thuyết, báo cáo đã trình bày các định nghĩa rủi ro xếp hạng, sai số thực nghiệm, các chặn tổng quát hóa dựa trên Rademacher complexity, Ranking SVM, RankBoost, bipartite ranking, ROC/AUC và preference-based ranking. Các chứng minh chính đều đi theo tinh thần của giáo trình: chuyển bài toán ranking thành kiểm soát sai số trên các cặp, sau đó dùng margin, convex surrogate hoặc phân tích độ phức tạp giả thuyết để thu được bảo đảm học. Đặc biệt, RankBoost minh họa rõ mối liên hệ giữa boosting và tối ưu hóa theo tọa độ: mỗi vòng chọn một weak ranker để giảm exponential loss, còn sai số thực nghiệm được chặn bởi tích các hệ số chuẩn hóa $Z_t$. Với bipartite ranking, mối liên hệ giữa rủi ro xếp hạng và AUC cho thấy AUC không chỉ là một độ đo thực nghiệm, mà còn là một cách diễn đạt trực tiếp xác suất một mẫu dương được xếp cao hơn một mẫu âm.
+
+Phần thực nghiệm cài đặt các thuật toán chính từ đầu bằng Python, không dùng thư viện học máy cấp cao cho phần huấn luyện cốt lõi. Các thí nghiệm trên dữ liệu tổng hợp kiểm chứng ba ý quan trọng: sai số RankBoost giảm phù hợp với chặn lý thuyết, bipartite ranking có quan hệ định lượng với AUC, và RankBoost có thể tận dụng weak ranker phi tuyến đơn giản để đạt sai số tốt hơn Ranking SVM tuyến tính trên dữ liệu có cấu trúc phi tuyến. Các hình vẽ được dùng để nối phần công thức với trực giác: đường hội tụ cho thấy vai trò của $Z_t$, ROC mô tả đánh đổi giữa true positive rate và false positive rate, còn biểu đồ so sánh giúp thấy khác biệt giữa hai họ thuật toán.
+
+Phần nghiên cứu liên quan mở rộng nội dung chương theo hai hướng. Bài báo \textit{Active Bipartite Ranking} mở rộng nội dung ROC/AUC sang thiết lập active learning, nơi thuật toán phải chọn nhãn cần hỏi để giảm chi phí dữ liệu. Bài báo về các ``tricks'' trong Learning to Rank hiện đại cho thấy các ý tưởng surrogate loss, smoothing và lựa chọn cặp lân cận vẫn là trung tâm trong các hệ thống GBDT-based LTR sau này. Như vậy, lý thuyết trong chương không bị tách khỏi thực hành, mà là nền tảng để hiểu các thuật toán ranking hiện đại hơn.
+
+Báo cáo vẫn có một số hạn chế. Thứ nhất, phần thực nghiệm chủ yếu dùng dữ liệu tổng hợp để kiểm soát giả thiết, nên chưa phản ánh đầy đủ nhiễu, mất cân bằng truy vấn và đặc trưng thưa trong các bộ dữ liệu Learning to Rank thực tế. Thứ hai, các cài đặt từ đầu ưu tiên tính minh họa và khả năng đọc hiểu, chưa tối ưu cho quy mô lớn. Thứ ba, chương tập trung nhiều vào ranking cổ điển dựa trên score và pairwise comparison, trong khi các hướng hiện đại như neural ranking, listwise optimization, fairness trong ranking và learning from implicit feedback chỉ mới được liên hệ ở mức tổng quan.
+
+Các hướng mở tự nhiên là thử nghiệm trên các bộ dữ liệu chuẩn như LETOR hoặc MSLR-WEB, mở rộng weak ranker của RankBoost từ decision stump sang cây sâu hơn, so sánh thêm các surrogate loss listwise cho NDCG, và nghiên cứu ảnh hưởng của tie-breaking trong AUC khi điểm số rời rạc. Một hướng khác là nối preference-based ranking với các mô hình neural ranker: thay vì ép mọi quan hệ ưu tiên về một thứ tự tuyến tính duy nhất, ta có thể học trực tiếp cấu trúc ưu tiên phức tạp hơn. Nhìn chung, chương Ranking cung cấp một khung nền tảng đủ chặt chẽ để hiểu cả lý thuyết tổng quát hóa lẫn các thiết kế thuật toán thực tế trong học xếp hạng.
+
 % ===== TÀI LIỆU THAM KHẢO =====
 \bibliographystyle{plainnat}
 \bibliography{references}
