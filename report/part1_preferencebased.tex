@@ -182,7 +182,7 @@ Xếp hạng theo degree giảm dần: $u \succ v \succ w$, tức $\sigma(u)=1, 
 \end{example}
 
 \paragraph{Chặn lý thuyết cho Sort-by-Degree.}
-\begin{theorem}[Chặn mất mát và regret cho Sort-by-Degree, Theorem 10.4]
+\begin{theorem}[Chặn mất mát và regret cho Sort-by-Degree, Section 10.6.2]
 \label{thm:sort_by_degree}
 Trong cài đặt nhị phân (bipartite), các chặn sau được chứng minh:
 \begin{align}
@@ -342,7 +342,7 @@ Tính chất cốt lõi: $\Pr[\mathcal{A}_{\mathrm{QS}} \text{ xếp } u \text{ 
 dẫn đến mất mát kỳ vọng bằng đúng $L(h, \sigma^*)$ — không có hệ số nhân 2.}
 \end{figure}
 
-\begin{theorem}[Chặn hiệu năng cho QuickSort ngẫu nhiên -- Theorem 10.4 mở rộng]
+\begin{theorem}[Chặn hiệu năng cho QuickSort ngẫu nhiên -- Định lý 2.5 mở rộng]
 \label{thm:quicksort_pref}
 Ký hiệu $\mathcal{A}_{\mathrm{QS}}$ là thuật toán QuickSort ngẫu nhiên dùng hàm ưu tiên $h$. Trong cài đặt nhị phân:
 \begin{align}
@@ -693,7 +693,7 @@ Cài đặt nhị phân (bipartite) là trường hợp đặc biệt của cả
 \end{itemize}
 
 \paragraph{Liên hệ với lý thuyết tổng quát hóa -- Rademacher Complexity (Chương 3).}
-Mặc dù phần preference-based setting không trình bày chặn tổng quát hóa theo Rademacher complexity một cách tường minh (vì khuôn khổ regret đã đủ), sự liên hệ ngầm vẫn tồn tại: chất lượng của hàm ưu tiên $h$ ở giai đoạn 1 (học từ dữ liệu) được đảm bảo bởi các chặn generalization của Chương 3 và Theorem 10.1. Regret của giai đoạn 2 sau đó được kiểm soát thông qua regret của $h$ như trong các theorem 10.4, 10.5.
+Mặc dù phần preference-based setting không trình bày chặn tổng quát hóa theo Rademacher complexity một cách tường minh (vì khuôn khổ regret đã đủ), sự liên hệ ngầm vẫn tồn tại: chất lượng của hàm ưu tiên $h$ ở giai đoạn 1 (học từ dữ liệu) được đảm bảo bởi các chặn generalization của Chương 3 và Theorem 10.1. Regret của giai đoạn 2 sau đó được kiểm soát thông qua regret của $h$ như trong section 10.6.2 và theorem 10.5.
 
 % -------- Tóm tắt --------
 % \subsubsection{Tóm Tắt Phần Preference-Based Setting}
