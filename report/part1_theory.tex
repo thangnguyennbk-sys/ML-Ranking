@@ -156,7 +156,42 @@ tuyến tính $f(x) = w_1 x_1 + w_2 x_2$ với $w_1 = w_2 = 1$:
 \]
 Vì $f(x) = 5.8 > 3.4 = f(x')$, hàm $f$ xếp đúng thứ tự, 
 ranking loss bằng $0$.
+Hình~\ref{fig:scoring} minh hoạ trực quan thứ tự này.
 \end{example}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=1.0]
+
+  % ---- Trục số ----
+  \draw[->, thick] (0,0) -- (8,0) node[right] {$f(x)$};
+  \foreach \x in {1,2,3,4,5,6,7}
+    \draw (\x, 0.08) -- (\x, -0.08);
+
+  % ---- Điểm x' (score thấp) ----
+  \filldraw[blue!70] (2.8, 0) circle (5pt)
+    node[above=6pt] {$x'=(3, 0.4)$}
+    node[below=6pt] {\small $f(x')=3.4$};
+
+  % ---- Điểm x (score cao) ----
+  \filldraw[red!80] (5.8, 0) circle (5pt)
+    node[above=6pt] {$x=(5, 0.8)$}
+    node[below=6pt] {\small $f(x)=5.8$};
+
+  % ---- Mũi tên thứ tự ưu tiên ----
+  \draw[->, dashed, gray, thick] (2.8, 0.9) -- (5.8, 0.9)
+    node[midway, above] {\small $x \succ x'$};
+
+  % ---- Nhãn ranking loss ----
+  \node at (4, -1.2) 
+    {$f(x) = 5.8 > 3.4 = f(x')$ $\Rightarrow$ ranking loss $= 0$};
+
+\end{tikzpicture}
+\caption{Minh hoạ hàm scoring $f(x) = w_1x_1 + w_2x_2$ với $w_1=w_2=1$
+trên Ví dụ~2.1. Vì $f(x) > f(x')$, hàm $f$ xếp đúng thứ tự 
+$x \succ x'$ và ranking loss bằng $0$.}
+\label{fig:scoring}
+\end{figure}
 
 \subsubsection{Thiết lập học thống kê}
 
@@ -310,10 +345,18 @@ $S' = \{(x_i'', x_i''')\}_{i=1}^m$ độc lập và cùng phân phối với $S$
 \textbf{Bước 3: Áp dụng Bổ đề~\ref{lem:rademacher_ranking} và 
 bổ đề Talagrand.}
 
-Vì hàm loss $\ell$ là 1-Lipschitz theo $g(x,x') = f(x) - f(x')$, 
-theo bổ đề contraction của Talagrand:
+Thay vì dùng trực tiếp ranking loss $\ell$ (vốn không liên tục, 
+do đó không Lipschitz), ta chặn trên bằng \textbf{hinge loss} 
+$\tilde{\ell}(t) = \max(0, 1 - t)$, một surrogate loss thoả:
 \[
-  \hat{\mathfrak{R}}_S(\mathcal{L} \circ \mathcal{G}) 
+  \mathbf{1}[t \leq 0] \leq \max(0, 1-t) = \tilde{\ell}(t), 
+  \quad \forall t \in \mathbb{R}.
+\]
+Hàm $\tilde{\ell}$ là $1$-Lipschitz (vì 
+$|\tilde{\ell}(a) - \tilde{\ell}(b)| \leq |a - b|$), 
+nên theo Bổ đề~\ref{lem:talagrand}:
+\[
+  \hat{\mathfrak{R}}_S(\tilde{\mathcal{L}} \circ \mathcal{G}) 
   \leq \hat{\mathfrak{R}}_S(\mathcal{G}) 
   \leq 2\hat{\mathfrak{R}}_{S^+}(\mathcal{H}).
 \]
@@ -337,44 +380,85 @@ và $\mathcal{G}$ là lớp hàm trên $\mathcal{X}$. Khi đó:
 \end{lemma}
 
 \begin{proof}
-Theo định nghĩa Rademacher complexity:
+Ta chứng minh bằng quy nạp theo số điểm $m$.
+
+\textbf{Bước cơ sở ($m = 1$):}
+\[
+  \hat{\mathfrak{R}}_{\{x_1\}}(\phi \circ \mathcal{G})
+  = \mathbb{E}_{\sigma_1}\left[\sup_{g \in \mathcal{G}} 
+    \sigma_1 \phi(g(x_1))\right].
+\]
+Cố định $g^+ = \arg\sup_g \phi(g(x_1))$ và 
+$g^- = \arg\sup_g (-\phi(g(x_1)))$. Khi đó:
 \begin{align*}
-  \hat{\mathfrak{R}}_S(\phi \circ \mathcal{G})
+  \mathbb{E}_{\sigma_1}\left[\sup_g \sigma_1\phi(g(x_1))\right]
+  &= \frac{1}{2}\sup_g \phi(g(x_1)) 
+   + \frac{1}{2}\sup_g (-\phi(g(x_1))) \\
+  &= \frac{1}{2}(\phi(g^+(x_1)) - \phi(g^-(x_1))) \\
+  &\leq \frac{L}{2}|g^+(x_1) - g^-(x_1)| \\
+  &\leq L \cdot \mathbb{E}_{\sigma_1}
+    \left[\sup_g \sigma_1 g(x_1)\right]
+  = L \cdot \hat{\mathfrak{R}}_{\{x_1\}}(\mathcal{G}).
+\end{align*}
+Bất đẳng thức thứ nhất dùng tính $L$-Lipschitz của $\phi$; 
+bất đẳng thức thứ hai dùng 
+$|g^+ - g^-| \leq 2\sup_g |g(x_1)|$.
+
+\textbf{Bước quy nạp:}
+Giả sử kết quả đúng với $m-1$ điểm. Với $m$ điểm, 
+viết tổng thành hai phần tách tọa độ $m$:
+\begin{align*}
+  m\cdot\hat{\mathfrak{R}}_S(\phi \circ \mathcal{G})
   &= \mathbb{E}_{\boldsymbol{\sigma}}\left[
-      \sup_{g \in \mathcal{G}} \frac{1}{m}
-      \sum_{i=1}^m \sigma_i \phi(g(x_i))
+      \sup_{g \in \mathcal{G}} \sum_{i=1}^{m} 
+      \sigma_i \phi(g(x_i))\right] \\
+  &= \mathbb{E}_{\boldsymbol{\sigma}_{-m}}\left[
+      \mathbb{E}_{\sigma_m}\left[
+        \sup_g \left(
+          \sum_{i=1}^{m-1}\sigma_i\phi(g(x_i)) 
+          + \sigma_m\phi(g(x_m))
+        \right)
+      \right]
     \right].
 \end{align*}
-Cố định $\boldsymbol{\sigma}$ và xét $g^* = \arg\sup_{g} 
-\sum_i \sigma_i \phi(g(x_i))$. Đặt $g^0$ là hàm thoả 
-$g^0(x_i) = 0$ với mọi $i$. Ta có:
+Cố định $\boldsymbol{\sigma}_{-m}$, đặt 
+$g^+ = \arg\sup_g [\cdots + \phi(g(x_m))]$ và 
+$g^- = \arg\sup_g [\cdots - \phi(g(x_m))]$. Khi đó:
 \begin{align*}
-  \sum_{i=1}^m \sigma_i \phi(g^*(x_i))
-  &= \sum_{i=1}^m \sigma_i [\phi(g^*(x_i)) - \phi(0)] 
-   + \sum_{i=1}^m \sigma_i \phi(0) \\
-  &\leq \sum_{i=1}^m |\phi(g^*(x_i)) - \phi(0)| 
-   + \left|\sum_{i=1}^m \sigma_i\right| \cdot |\phi(0)| \\
-  &\leq L \sum_{i=1}^m |g^*(x_i)| 
-   + \left|\sum_{i=1}^m \sigma_i\right| \cdot |\phi(0)|.
+  &\mathbb{E}_{\sigma_m}\left[\sup_g \left(
+    \sum_{i<m}\sigma_i\phi(g(x_i)) + \sigma_m\phi(g(x_m))
+  \right)\right] \\
+  &= \frac{1}{2}\sup_g\!\left[\sum_{i<m}\!\sigma_i\phi 
+     + \phi(g(x_m))\right]
+   + \frac{1}{2}\sup_g\!\left[\sum_{i<m}\!\sigma_i\phi 
+     - \phi(g(x_m))\right] \\
+  &\leq \frac{1}{2}\!\left(
+      \sum_{i<m}\sigma_i\phi(g^+(x_i)) 
+    + \sum_{i<m}\sigma_i\phi(g^-(x_i))
+    \right)
+    + \frac{L}{2}|g^+(x_m) - g^-(x_m)| \\
+  &\leq \sup_g \sum_{i<m}\sigma_i\phi(g(x_i))
+    + L\cdot\mathbb{E}_{\sigma_m}\!\left[
+        \sup_g \sigma_m g(x_m)\right].
 \end{align*}
-Lấy kỳ vọng theo $\boldsymbol{\sigma}$ và dùng tính chất 
-$\mathbb{E}[\sigma_i] = 0$:
+Lấy kỳ vọng theo $\boldsymbol{\sigma}_{-m}$ và áp dụng 
+giả thiết quy nạp:
 \[
-  \hat{\mathfrak{R}}_S(\phi \circ \mathcal{G})
-  \leq L \cdot \mathbb{E}_{\boldsymbol{\sigma}}\left[
-      \sup_{g \in \mathcal{G}} \frac{1}{m}
-      \sum_{i=1}^m \sigma_i g(x_i)
-    \right]
-  = L \cdot \hat{\mathfrak{R}}_S(\mathcal{G}).
+  m\cdot\hat{\mathfrak{R}}_S(\phi\circ\mathcal{G})
+  \leq (m-1)\hat{\mathfrak{R}}_{S\setminus\{x_m\}}
+        (\phi\circ\mathcal{G})
+    + L\cdot\hat{\mathfrak{R}}_{\{x_m\}}(\mathcal{G})
+  \leq L\cdot m\cdot\hat{\mathfrak{R}}_S(\mathcal{G}).
 \]
+Chia hai vế cho $m$ ta được kết quả.
 \end{proof}
 
 Áp dụng vào chứng minh Định lý~\ref{thm:ranking_bound}: 
-hàm ranking loss $\ell(t) = \mathbf{1}[t < 0] + 
-\frac{1}{2}\mathbf{1}[t=0]$ là $1$-Lipschitz, do đó 
+ta dùng hinge loss $\tilde{\ell}(t) = \max(0, 1-t)$ 
+làm surrogate $1$-Lipschitz cho ranking loss, do đó 
 $L = 1$ và:
 \[
-  \hat{\mathfrak{R}}_S(\mathcal{L} \circ \mathcal{G}) 
+  \hat{\mathfrak{R}}_S(\tilde{\mathcal{L}} \circ \mathcal{G}) 
   \leq \hat{\mathfrak{R}}_S(\mathcal{G}).
 \]
 \end{morong}
@@ -426,10 +510,16 @@ chặn tổng quát hoá có ý nghĩa thực tế.
 \begin{example}
 Xét $\mathcal{H}$ là lớp hàm tuyến tính chuẩn hoá: 
 $\mathcal{H} = \{x \mapsto \mathbf{w}^\top x \mid \|\mathbf{w}\| \leq \Lambda, 
-\|x\| \leq r\}$. Từ Chương~5, Rademacher complexity của lớp này thoả:
+\|x\| \leq r\}$. Từ Định lý~5.8 trong~\cite{mohri2018foundations}, 
+Rademacher complexity của lớp hàm tuyến tính thoả:
 \[
-  \hat{\mathfrak{R}}_{S^+}(\mathcal{H}) \leq \frac{r\Lambda}{\sqrt{2m}}.
+  \hat{\mathfrak{R}}_{S^+}(\mathcal{H}) 
+  \leq \frac{1}{\sqrt{2m}}
+       \sqrt{\sum_{x \in S^+} \|x\|^2} \cdot \Lambda
+  \leq \frac{r\Lambda}{\sqrt{2m}}.
 \]
+Bất đẳng thức thứ hai dùng $\|x\| \leq r$ với mọi $x \in S^+$.
+
 Thay vào Định lý~\ref{thm:ranking_bound}:
 \[
   R(f) \leq \hat{R}_S(f) + \frac{4r\Lambda}{\sqrt{2m}} 
@@ -468,6 +558,22 @@ $\{(x_i, x_i')\}_{i=1}^m$ với $x_i \succ x_i'$. Ta muốn
 tìm hàm scoring tuyến tính $f(x) = \mathbf{w}^\top \phi(x)$ 
 sao cho $f(x_i) > f(x_i')$ với mọi $i$.
 
+\begin{remark}
+Trong SVM phân loại, hàm quyết định có dạng 
+$f(x) = \mathbf{w}^\top\phi(x) + b$ với bias $b$. 
+Trong SVM Ranking, ta đặt $b = 0$ vì điều kiện 
+$f(x_i) > f(x_i')$ chỉ phụ thuộc vào 
+\emph{hiệu} $f(x_i) - f(x_i') = \mathbf{w}^\top\delta_i$, 
+và bias triệt tiêu hoàn toàn:
+\[
+  (f(x_i) + b) - (f(x_i') + b) 
+  = f(x_i) - f(x_i') = \mathbf{w}^\top\delta_i.
+\]
+Nói cách khác, bias không ảnh hưởng đến thứ tự 
+xếp hạng, nên ta có thể bỏ qua mà không mất tính 
+tổng quát.
+\end{remark}
+
 Đặt $\delta_i = \phi(x_i) - \phi(x_i')$. Khi đó điều kiện 
 $f(x_i) > f(x_i')$ tương đương với:
 \[
@@ -494,8 +600,59 @@ margin và số lỗi huấn luyện, $\xi_i$ là biến bù (slack variable).
 
 \subsubsection{Bài toán đối ngẫu (Dual Problem)}
 
-Áp dụng nhân tử Lagrange, bài toán đối ngẫu của 
-Định nghĩa~\ref{def:svmranking} là:
+Để giải bài toán nguyên thuỷ, ta lập 
+\textbf{hàm Lagrange}:
+\[
+  \mathcal{L}(\mathbf{w}, \boldsymbol{\xi}, 
+               \boldsymbol{\alpha}, \boldsymbol{\beta})
+  = \frac{1}{2}\|\mathbf{w}\|^2 
+  + C\sum_{i=1}^m \xi_i
+  - \sum_{i=1}^m \alpha_i
+    \bigl(\mathbf{w}^\top\delta_i - 1 + \xi_i\bigr)
+  - \sum_{i=1}^m \beta_i \xi_i,
+\]
+trong đó $\alpha_i \geq 0$, $\beta_i \geq 0$ là 
+nhân tử Lagrange (KKT multipliers).
+
+\textbf{Điều kiện tối ưu (KKT):}
+
+Lấy đạo hàm và đặt bằng 0:
+\begin{align}
+  \frac{\partial \mathcal{L}}{\partial \mathbf{w}} = 0 
+  &\implies \mathbf{w} = \sum_{i=1}^m \alpha_i \delta_i,
+  \label{eq:kkt_w} \\
+  \frac{\partial \mathcal{L}}{\partial \xi_i} = 0 
+  &\implies C - \alpha_i - \beta_i = 0 
+   \implies \alpha_i \leq C.
+  \label{eq:kkt_xi}
+\end{align}
+
+\textbf{Thế ngược vào hàm Lagrange:}
+
+Thay~\eqref{eq:kkt_w} vào $\mathcal{L}$ và dùng 
+$\beta_i = C - \alpha_i \geq 0$:
+\begin{align*}
+  \mathcal{L} 
+  &= \frac{1}{2}\left\|\sum_i\alpha_i\delta_i\right\|^2
+  + C\sum_i\xi_i
+  - \sum_i\alpha_i\left(
+      \left(\sum_j\alpha_j\delta_j\right)^\top\!\delta_i 
+      - 1 + \xi_i
+    \right)
+  - \sum_i\beta_i\xi_i \\
+  &= \frac{1}{2}\sum_{i,j}\alpha_i\alpha_j
+       \langle\delta_i,\delta_j\rangle
+  - \sum_{i,j}\alpha_i\alpha_j
+       \langle\delta_i,\delta_j\rangle
+  + \sum_i\alpha_i
+  + \sum_i(C - \alpha_i - \beta_i)\xi_i \\
+  &= \sum_i\alpha_i 
+  - \frac{1}{2}\sum_{i,j}\alpha_i\alpha_j K_\Delta(i,j),
+\end{align*}
+trong đó số hạng $\sum_i(C-\alpha_i-\beta_i)\xi_i = 0$ 
+theo~\eqref{eq:kkt_xi}.
+
+Do đó bài toán đối ngẫu là:
 \[
   \max_{\boldsymbol{\alpha}} 
   \sum_{i=1}^m \alpha_i 
@@ -571,7 +728,86 @@ Các vector hiệu là:
 Bài toán SVM Ranking trở thành tìm $\mathbf{w} \in \mathbb{R}^2$ 
 sao cho $\mathbf{w}^\top \delta_i \geq 1$ với $i = 1,2,3$, 
 đồng thời tối thiểu $\|\mathbf{w}\|^2$.
+Hình~\ref{fig:svm_ranking_margin} minh hoạ 
+trực quan bài toán tối ưu hoá này.
 \end{example}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=1.1]
+ 
+  % ── Vùng màu ────────────────────────────────────────────────
+  \fill[blue!15] (0.0,-3.2) rectangle (4.0, 3.8);    % w^T delta < 0
+  \fill[gray!10] (4.0,-3.2) rectangle (5.5, 3.8);    % 0 <= w^T delta < 1
+  \fill[red!12]  (5.5,-3.2) rectangle (9.2, 3.8);    % w^T delta >= 1
+ 
+  % ── Margin trái:  w^T delta = -1  =>  tikz_x = 2.5 ─────────
+  \draw[dashed, blue!60, thick] (2.5,-3.2) -- (2.5, 3.5);
+  \node[above, font=\small] at (2.5, 3.5)
+    {$\mathbf{w}^\top\!\delta = -1$};
+ 
+  % ── Hyperplane:  w^T delta = 0  =>  tikz_x = 4.0 ───────────
+  \draw[black, thick] (4.0,-3.2) -- (4.0, 3.5);
+  \node[above, font=\small] at (4.0, 3.5)
+    {$\mathbf{w}^\top\!\delta = 0$};
+ 
+  % ── Margin phải:  w^T delta = 1  =>  tikz_x = 5.5 ──────────
+  \draw[dashed, red!60, thick] (5.5,-3.2) -- (5.5, 3.5);
+  \node[above, font=\small] at (5.5, 3.9)
+    {$\mathbf{w_0}^\top\!\delta = 1$};
+ 
+  % ── Nhãn vùng ───────────────────────────────────────────────
+  \node[blue!80, font=\small] at (2.0,  2.6) {xếp sai};
+  \node[blue!80, font=\small] at (2.0,  2.1)
+    {$\mathbf{w}^\top\!\delta_i < 0$};
+  \node[red!70,  font=\small] at (7.4,  2.6) {xếp đúng};
+  \node[red!70,  font=\small] at (7.4,  2.1)
+    {$\mathbf{w}^\top\!\delta_i \geq 1$};
+ 
+  % ── delta_1 = (2,1): w_0^T delta = 3/2 => tikz_x = 6.25 ────
+  \filldraw[red!80] (6.25, 1.4) circle (4pt)
+    node[right=5pt, font=\small]
+      {$\delta_1\!=\!(2,1),\quad \mathbf{w_0}^\top\!\delta_1 = \tfrac{3}{2}$};
+ 
+  % ── delta_3 = (1,2): w_0^T delta = 1 => tikz_x = 5.5 [SV] ──
+  \filldraw[red!80] (5.5, 0.7) circle (4pt)
+    node[right=5pt, font=\small]
+      {$\delta_3\!=\!(1,2),\quad \mathbf{w_0}^\top\!\delta_3 = 1\ \text{\footnotesize(SV)}$};
+  \draw[red!80, thick] (5.5, 0.7) circle (8pt);
+ 
+  % ── delta_2 = (2,-2): w_0^T delta = 1 => tikz_x = 5.5 [SV] ─
+  \filldraw[red!80] (5.5,-1.1) circle (4pt)
+    node[right=5pt, font=\small]
+      {$\delta_2\!=\!(2,-2),\quad \mathbf{w_0}^\top\!\delta_2 = 1\ \text{\footnotesize(SV)}$};
+  \draw[red!80, thick] (5.5,-1.1) circle (8pt);
+ 
+  % ── Mũi tên margin ──────────────────────────────────────────
+  \draw[<->, green!50!black, thick]
+    (4.0,-2.7) -- (5.5,-2.7)
+    node[midway, below, font=\small]
+      {$\mathrm{margin} = \dfrac{1}{\|\mathbf{w_0}\|} \approx 1.46$};
+ 
+  % ── Hộp thông tin nghiệm tối ưu ─────────────────────────────
+  \node[draw=green!40!black, fill=green!8, rounded corners=3pt,
+        font=\footnotesize, align=left, inner sep=5pt]
+    at (7.5,-1.9)
+    {$\mathbf{w_0} = \!\bigl(\tfrac{2}{3},\,\tfrac{1}{6}\bigr)$\\
+     $\|\mathbf{w_0}\| = \tfrac{\sqrt{17}}{6} \approx 0.687$};
+ 
+  % ── Trục ngang ──────────────────────────────────────────────
+  \draw[->, gray, thick] (0.0, 0) -- (9.4, 0)
+    node[right, font=\small] {$\mathbf{w}^\top\!\delta$};
+ 
+\end{tikzpicture}
+\caption{Minh hoạ bài toán SVM Ranking với nghiệm tối ưu $\mathbf{w_0} = (2/3,\,1/6)$.
+Mỗi điểm biểu diễn vector hiệu $\delta_i = \phi(x_i) - \phi(x_i')$
+được chiếu lên trục $\mathbf{w_0}^\top\delta$.
+Các điểm $\delta_2$ và $\delta_3$ nằm chính xác trên margin
+($\mathbf{w_0}^\top\delta_i = 1$) — đây là các \textit{support vector} (ký hiệu SV, viền tròn đỏ).
+Điểm $\delta_1$ nằm vượt ra ngoài margin ($\mathbf{w_0}^\top\delta_1 = 3/2$).
+Ví dụ này có nghiệm hard-margin (không cần biến bù $\xi_i$).}
+\label{fig:svm_ranking_margin}
+\end{figure}
 
 \begin{morong}
 \subsubsection*{Phân tích độ phức tạp tính toán}
@@ -598,3 +834,47 @@ luyện. Đây là một trong những động lực để phát triển các
 thuật toán ranking hiệu quả hơn như RankBoost 
 (Mục~\ref{sec:rankboost}).
 \end{morong}
+
+\subsection{Mối liên hệ giữa các nội dung}
+\label{sec:connections}
+
+Ba mục vừa trình bày tạo thành một mạch lý thuyết nhất quán:
+
+\begin{itemize}
+  \item \textbf{9.1 $\to$ 9.2:} Định nghĩa ranking loss và 
+  generalization loss (Mục~\ref{sec:problem}) là tiền đề để 
+  đặt câu hỏi: liệu minimizing $\hat{R}_S(f)$ có đảm bảo 
+  $R(f)$ nhỏ không? Câu trả lời chính là 
+  Định lý~\ref{thm:ranking_bound}.
+
+  \item \textbf{9.2 $\to$ 9.3:} Chặn tổng quát hoá cho thấy 
+  cần kiểm soát $\hat{\mathfrak{R}}_{S^+}(\mathcal{H})$. 
+  SVM Ranking (Mục~\ref{sec:svmranking}) thực hiện điều này 
+  bằng cách ràng buộc $\|\mathbf{w}\|$ qua số hạng 
+  regularization $\frac{1}{2}\|\mathbf{w}\|^2$.
+
+  \item \textbf{9.3 $\to$ 9.4:} SVM Ranking có độ phức tạp 
+  $O(p^4)$ khi $p$ điểm tạo ra $O(p^2)$ cặp — không khả thi 
+  với dữ liệu lớn. Đây là động lực chính để phát triển 
+  RankBoost (Mục~\ref{sec:rankboost}), thuật toán hiệu quả 
+  hơn với độ phức tạp tuyến tính theo số cặp.
+
+  \item \textbf{Liên hệ với các chương khác trong sách:}
+  \begin{itemize}
+    \item \textbf{Chương 3 (Rademacher Complexity):} 
+    Bổ đề~\ref{lem:rademacher_ranking} và 
+    Định lý~\ref{thm:ranking_bound} áp dụng trực tiếp kỹ 
+    thuật đối xứng hoá và bất đẳng thức McDiarmid từ Chương~3.
+
+    \item \textbf{Chương 5 (SVM):} SVM Ranking là phép mở 
+    rộng tự nhiên — thay không gian $\mathcal{X}$ bằng 
+    $\mathcal{X}\times\mathcal{X}$ và vector đặc trưng 
+    $\phi(x)$ bằng $\phi(x)-\phi(x')$, kernel gốc $K$ 
+    bằng kernel sai phân $K_\Delta$.
+
+    \item \textbf{Chương 7 (Boosting):} RankBoost 
+    (Mục~\ref{sec:rankboost}) kế thừa framework AdaBoost 
+    từ Chương~7, thay hàm loss phân loại bằng hàm loss 
+    phù hợp cho bài toán ranking.
+  \end{itemize}
+\end{itemize}

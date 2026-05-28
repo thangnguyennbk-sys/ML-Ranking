@@ -2,8 +2,10 @@
 
 % --- Packages ---
 \usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
 \usepackage[vietnamese]{babel}
-\usepackage{amsmath,amssymb,amsthm}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
 \usepackage{graphicx}
 \usepackage{geometry}
 \geometry{left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
@@ -15,23 +17,95 @@
     urlcolor=blue
 }
 \usepackage{listings}
-\usepackage{color}
+\usepackage[dvipsnames]{xcolor}
 \usepackage{booktabs}
 \usepackage{float}
 \usepackage{caption}
 \usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, calc, decorations.pathreplacing}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage[numbers]{natbib}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{xparse}
+\usepackage{etoolbox}
+
 % --- Thêm cho phần lý thuyết ---
 \usepackage{tcolorbox}
-\tcbuselibrary{skins}
+\tcbuselibrary{skins,breakable}
 \newtcolorbox{morong}{
+    enhanced,
+    breakable,
     colback=yellow!20,
     colframe=orange!80,
     title=MỞ RỘNG
 }
-\newtheorem{theorem}{Định lý}[section]
-\newtheorem{lemma}[theorem]{Bổ đề}
-\newtheorem{definition}{Định nghĩa}[section]
-\newtheorem{example}{Ví dụ}[section]
+
+% --- Math commands ---
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Prob}{\mathbb{P}}
+\newcommand{\Hcal}{\mathcal{H}}
+\newcommand{\Xcal}{\mathcal{X}}
+\newcommand{\RR}[1]{\widehat{R}_{S,#1}}
+\newcommand{\RS}{\widehat{R}_S}
+\newcommand{\norm}[1]{\left\lVert #1 \right\rVert}
+\DeclareMathOperator{\sign}{sgn}
+\DeclareMathOperator{\conv}{conv}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+% --- Môi trường định lý ---
+\newcounter{theorem}[section]
+\newcounter{lemma}[section]
+\newcounter{definition}[section]
+\newcounter{example}[section]
+\newcounter{corollary}[section]
+\renewcommand{\thetheorem}{\thesection.\arabic{theorem}}
+\renewcommand{\thelemma}{\thesection.\arabic{lemma}}
+\renewcommand{\thedefinition}{\thesection.\arabic{definition}}
+\renewcommand{\theexample}{\thesection.\arabic{example}}
+\renewcommand{\thecorollary}{\thesection.\arabic{corollary}}
+
+\NewDocumentEnvironment{theorem}{ O{} g g }{
+    \refstepcounter{theorem}
+    \IfNoValueTF{#2}{\def\envtitle{#1}}{\def\envtitle{#2}}
+    \ifdefempty{\envtitle}{\def\envsuffix{}}{\def\envsuffix{ -- \envtitle}}
+    \IfNoValueF{#3}{\label{thm:#3}}
+    \par\medskip\noindent\textbf{Định lý~\thetheorem\envsuffix.}\itshape
+}{\par\medskip\normalfont}
+
+\NewDocumentEnvironment{lemma}{ O{} g g }{
+    \refstepcounter{lemma}
+    \IfNoValueTF{#2}{\def\envtitle{#1}}{\def\envtitle{#2}}
+    \ifdefempty{\envtitle}{\def\envsuffix{}}{\def\envsuffix{ -- \envtitle}}
+    \IfNoValueF{#3}{\label{lem:#3}}
+    \par\medskip\noindent\textbf{Bổ đề~\thelemma\envsuffix.}\itshape
+}{\par\medskip\normalfont}
+
+\NewDocumentEnvironment{definition}{ O{} g g }{
+    \refstepcounter{definition}
+    \IfNoValueTF{#2}{\def\envtitle{#1}}{\def\envtitle{#2}}
+    \ifdefempty{\envtitle}{\def\envsuffix{}}{\def\envsuffix{ -- \envtitle}}
+    \IfNoValueF{#3}{\label{def:#3}}
+    \par\medskip\noindent\textbf{Định nghĩa~\thedefinition\envsuffix.}
+}{\par\medskip}
+
+\NewDocumentEnvironment{corollary}{ O{} g g }{
+    \refstepcounter{corollary}
+    \IfNoValueTF{#2}{\def\envtitle{#1}}{\def\envtitle{#2}}
+    \ifdefempty{\envtitle}{\def\envsuffix{}}{\def\envsuffix{ -- \envtitle}}
+    \IfNoValueF{#3}{\label{cor:#3}}
+    \par\medskip\noindent\textbf{Hệ quả~\thecorollary\envsuffix.}\itshape
+}{\par\medskip\normalfont}
+
+\NewDocumentEnvironment{example}{ O{} }{
+    \refstepcounter{example}
+    \def\envtitle{#1}
+    \ifdefempty{\envtitle}{\def\envsuffix{}}{\def\envsuffix{ -- \envtitle}}
+    \par\medskip\noindent\textbf{Ví dụ~\theexample\envsuffix.}
+}{\par\medskip}
 
 % --- Title Page ---
 \title{
@@ -52,33 +126,38 @@
 \tableofcontents
 \newpage
 
-% --- Phần lý thuyết (Thành viên 1: ngọc) ---
+% ===== PHẦN 1: LÝ THUYẾT =====
+
+% Thành viên 1 - Ngọc (9.1, 9.2, 9.3)
 \input{part1_theory}
 
-% --- Import Theoretical Foundation (Member 1, 2, 3) ---
-% \input{part1_foundation.tex}
-% \newpage
+% Thành viên 2 - Nguyên (9.4 RankBoost, 9.5 Bipartite)
+\input{part1_rankboost}
+\input{part1_bipartite}
 
+% Thành viên 3 - Luân (9.6 Preference, 9.7 Discussion)
+\input{part1_preferencebased}
+
+% ===== PHẦN 2: THỰC NGHIỆM =====
 \newpage
-% --- Import Experimental Results (Member 4) ---
-\input{part2_experiments.tex}
+\input{part2_experiments}
 
+% ===== PHẦN 3: NGHIÊN CỨU TIÊN TIẾN =====
 \newpage
 \section{Phần 3: Nghiên cứu tiên tiến liên quan}
 
-% --- BÀI BÁO SỐ 1  ---
-\input{part3_paper1.tex}
-
-% --- BÀI BÁO SỐ 2 ---
+% Thành viên 5 - Nhân
+\input{part3_paper1}
 \newpage
-\input{part3_paper2.tex}
+\input{part3_paper2}
 
+% ===== KẾT LUẬN =====
 \newpage
 \section{Kết luận}
 \textit{(Cả nhóm tổng hợp đóng góp và hướng phát triển)}
 
-% --- Bibliography ---
-\bibliographystyle{plain}
+% ===== TÀI LIỆU THAM KHẢO =====
+\bibliographystyle{plainnat}
 \bibliography{references}
 
 \end{document}
