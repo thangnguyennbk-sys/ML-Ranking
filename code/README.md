@@ -14,8 +14,8 @@ Mã nguồn được phân tách thành các module chức năng rõ ràng để
     *   Tạo dữ liệu phân hạng hai nhóm (bipartite ranking dataset) từ hai phân phối chuẩn khác nhau.
 *   **`models.py`**: Triển khai hoàn toàn từ đầu (tuyệt đối không dùng thư viện ngoài cho giải thuật chính):
     *   `DecisionStump`: Bộ phân hạng yếu (weak ranker) dạng nhị phân $h: X \to \{0, 1\}$.
-    *   `RankBoost`: Thuật toán boosting phân hạng cặp (Algorithm 9.1).
-    *   `BipartiteRankBoost`: Thuật toán boosting phân hạng hai nhóm (Algorithm 9.2).
+    *   `RankBoost`: Thuật toán boosting phân hạng cặp (Algorithm 10.1).
+    *   `BipartiteRankBoost`: Thuật toán boosting phân hạng hai nhóm (Algorithm 10.2).
     *   `RankingSVM`: Mô hình SVM Ranking được tối ưu hoá trực tiếp trên hàm mất mát hinge cặp qua phương pháp hạ độ hàm dưới primal (Pegasos-like Subgradient Descent).
 *   **`metrics.py`**: Chứa các hàm đánh giá chất lượng phân hạng viết từ đầu:
     *   `compute_pairwise_ranking_error`: Tính toán lỗi phân hạng cặp thực nghiệm.

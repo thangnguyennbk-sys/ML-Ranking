@@ -230,8 +230,61 @@
 % ===== KẾT LUẬN =====
 \newpage
 \section{Kết luận}
-\textit{(Cả nhóm tổng hợp đóng góp và hướng phát triển)}
+ 
+Báo cáo này đã trình bày toàn diện Chương 10 -- \textit{Ranking} -- của giáo trình \textit{Foundations of Machine Learning} \citep{mohri2018foundations}, bao gồm nền tảng lý thuyết, cài đặt thực nghiệm và các nghiên cứu tiên tiến liên quan.
+ 
+\subsection*{Tóm tắt những đóng góp chính của nhóm}
+ 
+\paragraph{Phần lý thuyết (Phần 1).}
+Nhóm đã trình bày đầy đủ và có hệ thống các nội dung cốt lõi của Chương 10 theo cấu trúc từ tổng quát đến chuyên biệt:
+ 
+\begin{itemize}
+    \item \textbf{Cài đặt Score-based và Generalization Bounds (Mục 10.1--10.2):} Bài toán ranking được hình thức hoá thông qua hàm scoring $f: \mathcal{X} \to \mathbb{R}$ và hàm mất mát pairwise. Định lý tổng quát hoá chính (Định lý \ref{thm:ranking_bound}) -- liên kết ranking loss thực nghiệm với ranking loss tổng quát thông qua Rademacher complexity -- được chứng minh đầy đủ từng bước, bao gồm cả Bổ đề Talagrand (contraction lemma) mà giáo trình chỉ trích dẫn không chứng minh.
+ 
+    \item \textbf{SVM Ranking (Mục 10.3):} Bài toán phân loại trên không gian cặp được phát biểu chính xác dưới dạng bài toán QP, kèm theo phân tích đối ngẫu và so sánh có hệ thống với SVM phân loại thông thường.
+ 
+    \item \textbf{RankBoost (Mục 10.4):} Toàn bộ chuỗi lý thuyết của RankBoost được trình bày: từ việc chứng minh sự tương đương với Coordinate Descent, đến chặn sai số thực nghiệm theo hàm mũ (Định lý \ref{thm:rankboost_error}), và Margin Bound cho ensemble (Hệ quả \ref{cor:ensemble_bound}). Đặc biệt, nhóm đã bổ sung ví dụ phản chứng chỉ ra sự sụp đổ của Weak Ranking Assumption khi preference có chu trình không bắc cầu.
+ 
+    \item \textbf{Bipartite Ranking và AUC (Mục 10.5):} Tính chất phân rã nhân tử của BipartiteRankBoost được chứng minh tường minh, cho thấy độ phức tạp tính toán giảm từ $\mathcal{O}(mn)$ xuống $\mathcal{O}(m+n)$. Mối liên hệ gradient giữa RankBoost và AdaBoost trong cài đặt nhị phân cũng được phân tích chi tiết. Nhóm cũng chứng minh đầy đủ bài tập Exercise 10.7 về quan hệ giữa binary classification error và bipartite ranking error.
+ 
+    \item \textbf{Preference-based Setting (Mục 10.6):} Hai thuật toán giai đoạn 2 -- Sort-by-Degree (xác định) và QuickSort ngẫu nhiên -- được phân tích lý thuyết, kèm theo chứng minh đầy đủ chặn dưới cho thuật toán xác định (Định lý \ref{thm:lower_bound_det}) và kết quả trung tâm về QuickSort (Định lý \ref{thm:quicksort_pref}). Kết quả này khẳng định: \emph{ngẫu nhiên hoá là cần thiết và đủ} để loại bỏ hệ số nhân 2 trong chặn mất mát.
+ 
+    \item \textbf{Các tiêu chí xếp hạng thực tế (Mục 10.7):} Precision@$k$, Average Precision, MAP, DCG và NDCG được trình bày hệ thống với các ví dụ tính toán cụ thể và mối liên hệ toán học với AUC.
+\end{itemize}
+ 
+\paragraph{Phần thực nghiệm (Phần 2).}
+Ba thực nghiệm được thiết kế và lập trình từ đầu (from scratch) bằng Python đã kiểm chứng các tính chất lý thuyết quan trọng:
+ 
+\begin{enumerate}
+    \item Sự hội tụ của RankBoost và tính chặt chẽ của chặn lý thuyết $\prod Z_t$ và $\exp(-2\gamma^2 T)$.
+    \item Hệ thức $R(h) + \mathrm{AUC}(h) = 1$ trong bipartite ranking, kèm phân tích trường hợp có ties (điểm trùng).
+    \item So sánh tốc độ hội tụ và độ chính xác của RankBoost so với Ranking SVM, cho thấy lợi thế của RankBoost khi dữ liệu có cấu trúc phi tuyến.
+\end{enumerate}
+ 
+\paragraph{Phần nghiên cứu tiên tiến (Phần 3).}
+Nhóm đã phân tích sâu hai bài báo hiện đại có liên hệ chặt chẽ với lý thuyết trong Chương 10:
+ 
+\begin{itemize}
+    \item \textbf{Active Bipartite Ranking} \citep{cheshire2023active}: Bài báo NeurIPS 2023 lấp đầy lỗ hổng lớn trong lý thuyết bằng cách kết hợp Active Learning với Bipartite Ranking. Thuật toán \texttt{active-rank} đạt đảm bảo PAC với chi phí nhãn tối thiểu $\mathcal{O}(\log(1/\delta))$, vượt trội so với chiến lược thụ động cần $\mathcal{O}(1/\epsilon^2)$ nhãn.
+ 
+    \item \textbf{Which Tricks are Important for Learning to Rank?} \citep{lyzhin2023tricks}: Bài báo ICML 2023 cung cấp phân tích thực nghiệm thống nhất và đầy đủ nhất từ trước đến nay về các thuật toán GBDT-based LTR. Kết luận chính -- \emph{làm mịn ngẫu nhiên là yếu tố quan trọng nhất, và tính lồi thường có lợi hơn tối ưu trực tiếp không lồi} -- có ý nghĩa thực tiễn lớn và liên kết trực tiếp với tư tưởng surrogate loss từ Mục 10.4.2 của giáo trình.
+\end{itemize}
+ 
+\subsection*{Những điểm nổi bật và mở rộng}
+ 
+So với phần trình bày gốc trong giáo trình, nhóm đã đóng góp các nội dung mở rộng sau:
+ 
+\begin{enumerate}
+    \item \textbf{Chứng minh bổ đề Talagrand đầy đủ} bằng quy nạp toán học (giáo trình chỉ trích dẫn).
+    \item \textbf{Chứng minh tính tương đương RankBoost -- Coordinate Descent} theo từng bước, bao gồm cả line search và tiêu chí chọn hướng tọa độ.
+    \item \textbf{Ví dụ phản chứng về Preference Cycle} chỉ ra điều kiện RankBoost thất bại.
+    \item \textbf{Bổ sung ví dụ phản chứng về tính cần thiết của điều kiện bounded} trong Định lý tổng quát hoá.
+    \item \textbf{Phân tích ví dụ phản chứng về AUC} trong tình huống mất cân bằng dữ liệu.
+    \item \textbf{Chứng minh đầy đủ quan hệ gradient} giữa RankBoost và AdaBoost trong bipartite setting.
+    \item \textbf{Demo thực nghiệm} minh chứng cho Active Bipartite Ranking với ngân sách nhãn giới hạn.
+\end{enumerate}
 
+\newpage
 % ===== TÀI LIỆU THAM KHẢO =====
 \bibliographystyle{plainnat}
 \bibliography{references}
