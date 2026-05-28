@@ -1,6 +1,6 @@
 # Hướng dẫn chạy Thực nghiệm & Cài đặt Mô hình (Thành viên 4)
 
-Thư mục này chứa mã nguồn cài đặt từ đầu (from scratch) các thuật toán phân hạng (Ranking) trong Chương 9 của sách *Foundations of Machine Learning (FML)*, phục vụ cho phần **Thực nghiệm minh hoạ (Phần 2 - 30 điểm)**.
+Thư mục này chứa mã nguồn cài đặt từ đầu (from scratch) các thuật toán phân hạng (Ranking) trong Chương 10 của sách *Foundations of Machine Learning (FML)*, phục vụ cho phần **Thực nghiệm minh hoạ (Phần 2 - 30 điểm)**.
 
 ---
 
@@ -60,7 +60,7 @@ Sau khi chạy xong, các tệp ảnh biểu đồ chất lượng cao sẽ tự
 ## 📊 Mô tả các thực nghiệm & Chứng minh lý thuyết
 
 ### Thực nghiệm 1: Sự hội tụ và Chặn sai số RankBoost
-*   **Mục đích**: Kiểm chứng **Định lý 9.2 (FML)** chỉ ra rằng sai số huấn luyện cặp $\widehat{R}(h)$ của RankBoost giảm theo hàm mũ và bị chặn trên bởi tích các hệ số chuẩn hóa $\prod_{s=1}^t Z_s$:
+*   **Mục đích**: Kiểm chứng **Định lý 10.2 (FML)** chỉ ra rằng sai số huấn luyện cặp $\widehat{R}(h)$ của RankBoost giảm theo hàm mũ và bị chặn trên bởi tích các hệ số chuẩn hóa $\prod_{s=1}^t Z_s$:
     $$\widehat{R}(g_t) \le \prod_{s=1}^t Z_s$$
 *   **Kết quả**: Đồ thị `experiment1_rankboost_bounds.png` hiển thị dưới thang đo Logarit cho thấy rõ đường sai số thực tế luôn nằm nghiêm ngặt dưới đường chặn lý thuyết và giảm dần về 0.
 
