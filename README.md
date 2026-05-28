@@ -32,15 +32,15 @@ Báo cáo trình bày toàn diện Chương 10, chia thành ba phần chính:
 
 #### Phần 1 — Lý thuyết
 
-| Mục | Nội dung | Thành viên phụ trách |
-|---|---|---|
-| 10.1 | Phát biểu hình thức bài toán ranking, hàm scoring, ranking loss | Trần Kim Ngọc |
-| 10.2 | Generalization Bounds dựa trên Rademacher Complexity | Trần Kim Ngọc |
-| 10.3 | SVM Ranking: bài toán primal, đối ngẫu, kernel trên cặp | Trần Kim Ngọc |
-| 10.4 | Thuật toán RankBoost, tương đương Coordinate Descent | Nguyễn Thành Nguyên |
-| 10.5 | Bipartite Ranking, AUC, BipartiteRankBoost $\mathcal{O}(m+n)$ | Nguyễn Thành Nguyên |
-| 10.6 | Preference-based Setting, Sort-by-Degree, QuickSort ngẫu nhiên | Trần Đình Luân |
-| 10.7 | Các tiêu chí xếp hạng: Precision, AP, MAP, DCG, NDCG | Trần Đình Luân |
+| Mục | Nội dung |
+|---|---|
+| 10.1 | Phát biểu hình thức bài toán ranking, hàm scoring, ranking loss |
+| 10.2 | Generalization Bounds dựa trên Rademacher Complexity |
+| 10.3 | SVM Ranking: bài toán primal, đối ngẫu, kernel trên cặp |
+| 10.4 | Thuật toán RankBoost, tương đương Coordinate Descent |
+| 10.5 | Bipartite Ranking, AUC, BipartiteRankBoost $\mathcal{O}(m+n)$ |
+| 10.6 | Preference-based Setting, Sort-by-Degree, QuickSort ngẫu nhiên |
+| 10.7 | Các tiêu chí xếp hạng: Precision, AP, MAP, DCG, NDCG |
 
 #### Phần 2 — Thực nghiệm
 
@@ -81,33 +81,4 @@ Các nội dung sau được đánh dấu `[MỞ RỘNG]` và đặt trong khung
 
 ## Hướng dẫn tái tạo kết quả thực nghiệm
 
-### Yêu cầu môi trường
-
-```bash
-python >= 3.9
-numpy >= 1.24
-matplotlib >= 3.7
-scikit-learn >= 1.3   # Chỉ dùng để vẽ đường cong ROC, KHÔNG dùng cho huấn luyện
-```
-
-Cài đặt dependencies:
-
-```bash
-pip install numpy matplotlib scikit-learn
-```
-
-### Chạy từng thực nghiệm
-
-```bash
-# Thực nghiệm 1: Hội tụ RankBoost và chặn lý thuyết
-python code/experiment1.py
-
-# Thực nghiệm 2: Bipartite Ranking, ROC/AUC
-python code/experiment2.py
-
-# Thực nghiệm 3: So sánh RankBoost vs. Ranking SVM
-python code/experiment3.py
-
-# Demo Active Bipartite Ranking (Phần 3, bài báo NeurIPS 2023)
-python code/active_rank_demo.py
-```
+**Yêu cầu môi trường** và **Hướng dẫn chạy thực ngiệm** được trình bày trong [code/README.md](code/README.md)
