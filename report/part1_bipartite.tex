@@ -61,7 +61,7 @@ Diện tích dưới đường cong ROC (AUC) tương ứng trên tập này thu
 Ví dụ số học trực quan này chỉ ra bản chất của bipartite ranking: sai số được tính trung bình trên toàn bộ mạng lưới kết nối cặp tích cực - tiêu cực chứ không phụ thuộc vào một ngưỡng phân loại tuyệt đối nào.
 \end{example}
 
-\begin{tcolorbox}[colback=red!5, colframe=red!50!black,
+\begin{tcolorbox}[enhanced, breakable, colback=blue!5, colframe=blue!50!black,
                  title={Khác biệt bản chất với binary classification}]
 Mặc dù cùng làm việc trên hai tập nhãn (positive/negative), \textbf{bipartite ranking không phải là classification}. 
 Lý do nằm ở mục tiêu tối ưu hóa:
@@ -532,7 +532,7 @@ Hệ thức gradient được chứng minh hoàn tất và chặt chẽ.
 
 \subsubsection*{Đẳng thức và tính chất giới hạn học thuật}
 
-\begin{tcolorbox}[colback=blue!5, colframe=blue!50!black, title={\textbf{Mối liên hệ học thuật AdaBoost $\leftrightarrow$ RankBoost}}]
+\begin{tcolorbox}[enhanced, breakable, colback=blue!5, colframe=blue!50!black, title={\textbf{Mối liên hệ học thuật AdaBoost $\leftrightarrow$ RankBoost}}]
 Giả sử không gian giả thuyết $\mathcal{H}$ chứa hàm hằng $h_0(x) \equiv 1$. Xét hàm mục tiêu được tối ưu trên tập dữ liệu phân hoạch phi tuyến (non-linearly separable dataset). 
 Nếu $(f_s)_{s=1}^\infty$ là một chuỗi các hàm số nằm trong nón của không gian giả thuyết $\Hcal$ sao cho:
 \begin{equation}

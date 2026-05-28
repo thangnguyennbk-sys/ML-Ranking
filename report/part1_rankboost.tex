@@ -327,7 +327,7 @@ Và nếu chạy tới $T = 25$ vòng lặp:
     \label{fig:exponential_error_decay}
 \end{figure}
 
-\begin{tcolorbox}[colback=yellow!5, colframe=orange!70!black, title={\textbf{Cận hội tụ dưới điều kiện yếu hơn (Weaker Edge Condition)}}]
+\begin{tcolorbox}[enhanced, breakable, colback=blue!5, colframe=blue!50!black, title={\textbf{Cận hội tụ dưới điều kiện yếu hơn (Weaker Edge Condition)}}]
 Trong trường hợp tổng quát hơn, giáo trình Mohri (trang 248) chỉ ra rằng một điều kiện yếu hơn cũng đủ để RankBoost hội tụ theo hàm mũ. Cụ thể, nếu tồn tại $\gamma > 0$ sao cho với mọi $t \in [T]$:
 \begin{equation}
     \gamma_t \geq \gamma \sqrt{1 - \epsilon^0_t} \quad \Longleftrightarrow \quad \gamma \leq \frac{\epsilon^+_t - \epsilon^-_t}{2\sqrt{1 - \epsilon^0_t}},
@@ -413,7 +413,9 @@ Cập nhật phân phối $D_2$ thích ứng cho vòng sau:
 
 Sự phân bổ lại trọng số phân phối được trực quan hóa tại Hình~\ref{fig:weight_shift}. Trọng số của cặp xếp sai tăng vọt làm cơ sở thúc đẩy RankBoost tăng cường độ chính xác liên tục.
 
-\begin{tcolorbox}[colback=extensioncolor, colframe=yellow!60!black, title={\textbf{[MỞ RỘNG] Phản ví dụ: Sự sụp đổ của Weak Ranking Assumption với Preference Cycle}}]
+\begin{morong}
+\textbf{[MỞ RỘNG] Phản ví dụ: Sự sụp đổ của Weak Ranking Assumption với Preference Cycle.}
+
 Một giả thiết tối quan trọng để RankBoost hội tụ là \textit{Weak Ranking Assumption}: tồn tại $\gamma > 0$ sao cho ở mỗi vòng $\gamma_t \geq \gamma > 0$. Chúng ta sẽ xây dựng một ví dụ phản chứng chỉ ra rằng khi preference chứa \textbf{chu trình không bắc cầu} (non-transitive cycles), giả thiết này sẽ bị vi phạm và RankBoost không thể học được hoàn hảo.
 
 Xét 3 phần tử $\{x_1, x_2, x_3\}$ có preference dạng chu trình kéo theo:
@@ -429,7 +431,7 @@ Giả sử tại vòng $t$, phân phối trọng số hội tụ về dạng đ�
     \item Tuy nhiên, khi RankBoost tăng trọng số của cặp bị xếp sai lên, phân phối $D$ sẽ thay đổi. Khi phân phối đạt trạng thái cân bằng nơi mà các cặp khó xoay vòng, không còn bất kỳ base ranker nào trong $\Hcal$ có thể đạt được $\epsilon^+_t > \epsilon^-_t$ (chỉ có thể đạt $\epsilon^+_t = \epsilon^-_t$ do tính đối xứng của chu trình).
 \end{itemize}
 Tại thời điểm đó, $\gamma_t = 0 \implies \alpha_t = 0$. Thuật toán dừng lại và \textbf{không thể giảm empirical error về 0}. Điều này phản ánh hạn chế cấu trúc của score-based setting khi đối mặt với preference cycles của con người.
-\end{tcolorbox}
+\end{morong}
 
 \subsubsection{Liên hệ với Coordinate Descent}
 
@@ -535,7 +537,7 @@ Chứng minh quy nạp hoàn tất. RankBoost và Coordinate Descent là đồng
     \label{fig:coordinate_descent_steps}
 \end{figure}
 
-\begin{tcolorbox}[colback=blue!5, colframe=blue!50!black]
+\begin{tcolorbox}[enhanced, breakable, colback=blue!5, colframe=blue!50!black]
 \textbf{Nhận xét}: Phương trình \eqref{eq:F_obj} là một cận trên lồi chặt của hàm tổn thất nhị phân thực tế. RankBoost thực chất chính là giải pháp tối ưu hóa tối tân sử dụng gradient lồi trên bao lồi của các bộ phân hạng yếu.
 \end{tcolorbox}
 
@@ -608,25 +610,29 @@ Hệ quả được chứng minh hoàn tất và chặt chẽ.
     \end{equation}
 \end{enumerate}
 
-\begin{tcolorbox}[colback=yellow!5, colframe=orange!70!black, title={\textbf{Quan sát then chốt}}]
+\begin{tcolorbox}[enhanced, breakable, colback=blue!5, colframe=blue!50!black, title={\textbf{Quan sát then chốt}}]
 Cả ba chặn trên đều có đặc tính vô cùng quan trọng: \textbf{chúng hoàn toàn không phụ thuộc vào số lượng vòng lặp boosting $T$}. Chúng chỉ phụ thuộc vào margin $\rho$, kích thước mẫu dữ liệu $m$, và năng lực biểu diễn Rademacher complexity của tập $\Hcal$. Điều này giải thích trên phương diện lý thuyết tại sao RankBoost có khả năng kháng quá khớp (overfitting) cực kỳ mạnh mẽ ngay cả khi chạy với số vòng lặp $T$ rất lớn \citep{rudin2005margin}.
 \end{tcolorbox}
 
-\begin{tcolorbox}[colback=extensioncolor, colframe=yellow!60!black, title={\textbf{[MỞ RỘNG] Hai hướng tổng quát hóa thuật toán RankBoost (trang 248)}}]
+\begin{morong}
+\textbf{[MỞ RỘNG] Hai hướng tổng quát hóa thuật toán RankBoost (trang 248).}
+
 Giáo trình Mohri vạch ra hai hướng mở rộng vô cùng quan trọng đối với thuật toán RankBoost cơ bản:
 \begin{enumerate}
     \item \textbf{Không gian giả thuyết xuất thực tế}: Thay vì chỉ giới hạn base rankers trả về nhị phân $\{0,1\}$, thuật toán được tổng quát hóa cho phép base rankers trả về giá trị thực bất kỳ trong $[0,1]$ hoặc $\R$. Điều này cho phép sử dụng các mô hình cơ sở mạnh hơn như cây quyết định (decision trees).
     \item \textbf{Tối ưu hóa hệ số tin cậy phi đóng-form (Non-closed-form alpha)}: Trong trường hợp tổng quát trên, hệ số tin cậy $\alpha_t$ không còn công thức nghiệm đóng (closed-form) dạng $\frac{1}{2}\log(\epsilon^+_t/\epsilon^-_t)$ đơn giản nữa. Khi đó, $\alpha_t$ bắt buộc phải được giải bằng các thuật toán tối ưu hóa số học một chiều như phương pháp tìm kiếm đường thẳng (line search) hoặc lặp Newton-Raphson để cực tiểu hóa hệ số chuẩn hóa toàn cục $Z_t$.
 \end{enumerate}
-\end{tcolorbox}
+\end{morong}
 
-\begin{tcolorbox}[colback=extensioncolor, colframe=yellow!60!black, title={\textbf{[MỞ RỘNG] Smooth Margin RankBoost và tối ưu lề thực tế}}]
+\begin{morong}
+\textbf{[MỞ RỘNG] Smooth Margin RankBoost và tối ưu lề thực tế.}
+
 RankBoost chuẩn tối ưu hóa hàm tổn thất lũy thừa nhưng không cực đại hóa margin một cách trực tiếp. \citet{rudin2005margin} giới thiệu biến thể \textit{Smooth Margin RankBoost} bằng phương pháp tối ưu hóa hàm mục tiêu chuẩn hóa entropy:
 \[
     F_{\text{smooth}}(\bm{\alpha}) = -\frac{1}{T}\log F(\bm{\alpha}),
 \]
 chỉ ra tốc độ hội tụ margin tiệm cận tối ưu vượt trội. Tuy nhiên, các phân tích thực nghiệm chỉ ra RankBoost nguyên bản vẫn cực kỳ bền vững trên đa số tập dữ liệu thực tế.
-\end{tcolorbox}
+\end{morong}
 
 % ── KHẢO SÁT MỐI LIÊN HỆ LÝ THUYẾT ────────────────────────────────────────────
 \subsubsection{Khảo sát mối liên hệ học thuật với các chương khác trong giáo trình}
